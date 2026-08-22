@@ -18,14 +18,23 @@ contract FunctionDispatcher {
     /*                        CUSTOM ERRORS                       */
     /*-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»*/
 
+    /// @notice Emitted when calldata payload has fewer than 4 bytes.
+    /// @param size The actual length of calldata provided.
     error CalldataTooShort(uint256 size);
+
+    /// @notice Emitted when the 4-byte selector is not registered.
+    /// @param selector The incoming unregistered bytes4 selector.
     error UnknownSelector(bytes4 selector);
+
+    /// @notice Emitted when the registered selector points to address(0).
+    /// @param selector The selector mapped to a zero target.
     error ZeroImplementation(bytes4 selector);
 
     /*«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-*/
     /*                         CONSTRUCTOR                        */
     /*-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»*/
 
+    /// @param _registry The address of the deployed FunctionRegistry contract.
     constructor(address _registry) {
         require(_registry != address(0), "registry cannot be zero");
         registry = FunctionRegistry(_registry);
