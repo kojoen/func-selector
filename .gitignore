@@ -1,0 +1,20 @@
+# Compiler files
+cache/
+out/
+
+# Ignores development broadcast logs
+!/broadcast
+/broadcast/*/31337/
+/broadcast/**/dry-run/
+
+# Agent skill definitions for local tooling only, not part of the project
+.agents/
+
+# GitHub Actions / CI config for excluded from repo
+.github/
+
+# IDE config
+.vscode/
+
+# Dotenv file
+.env
