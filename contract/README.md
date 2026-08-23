@@ -1,13 +1,13 @@
-# Function Selector Project
+# Contract Function Selector
 
-A modular, high-performance Solidity function selector router and low-level calldata dispatcher powered by Foundry.
+A modular, Solidity Function Selector Router.
 
 [![Foundry Tests](https://img.shields.io/badge/Foundry-56%2F56%20Passing-brightgreen.svg)](#test-suite-summary)
 [![Solidity](https://img.shields.io/badge/Solidity-%5E0.8.24-orange.svg)](https://soliditylang.org/)
 
 ---
 
-## 🏛️ Architecture Overview
+## 🏛️ Architecture
 
 ```
                           ┌─────────────────────────────┐
@@ -39,7 +39,7 @@ A modular, high-performance Solidity function selector router and low-level call
 └─────────────────┘   └─────────────────┘
 ```
 
-## 📁 Project Structure
+## 📁 Structure
 
 ```
 function-selector/
@@ -81,12 +81,3 @@ forge test -vvv
 cd contract
 forge script script/SetupSelectorSystem.s.sol --rpc-url <RPC_URL> --broadcast
 ```
-
-## 🧪 Test Suite Summary
-
-| Test Category | Target File | Test Cases | Status |
-| :--- | :--- | :--- | :--- |
-| **Unit & Boundary Tests** | `FunctionSelector.t.sol` | 48 tests | ✅ PASS |
-| **Fuzz Tests** | `FunctionSelector.t.sol` | 4 tests (256+ runs) | ✅ PASS |
-| **Invariant Suites** | `FunctionSelectorInvariant.t.sol` | 4 invariants (3,840 calls) | ✅ PASS |
-| **Total** | | **56 / 56** | **100% PASS** |
