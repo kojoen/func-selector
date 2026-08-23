@@ -68,7 +68,7 @@ contract FunctionSelectorTest is Test {
     }
 
     /*«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-*/
-    /*                   1. SELECTOR INTEGRITY                    */
+    /*                   SELECTOR INTEGRITY                       */
     /*-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»*/
 
     function test_Selector_add() public pure {
@@ -122,7 +122,7 @@ contract FunctionSelectorTest is Test {
     }
 
     /*«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-*/
-    /*                     2. REGISTRY TESTS                      */
+    /*                     REGISTRY TESTS                         */
     /*-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»*/
 
     function test_Registry_isRegistered() public view {
@@ -215,7 +215,7 @@ contract FunctionSelectorTest is Test {
     }
 
     /*«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-*/
-    /*                    3. DISPATCHER TESTS                     */
+    /*                       DISPATCHER TESTS                     */
     /*-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»*/
 
     function test_Dispatcher_Add_ViaInterface() public {
@@ -285,7 +285,7 @@ contract FunctionSelectorTest is Test {
     }
 
     /*«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-*/
-    /*                    4. CALLDATA BOUNDARY                    */
+    /*                       CALLDATA BOUNDARY                    */
     /*-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»*/
 
     function test_Boundary_ZeroBytes_CallsReceive() public {
@@ -330,7 +330,7 @@ contract FunctionSelectorTest is Test {
     }
 
     /*«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-*/
-    /*                    5. SELECTORLIB TESTS                    */
+    /*                       SELECTORLIB TESTS                    */
     /*-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»*/
 
     function test_SelectorLib_Compute() public pure {
@@ -374,7 +374,7 @@ contract FunctionSelectorTest is Test {
     }
 
     /*«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-*/
-    /*                       6. FUZZ TESTS                        */
+    /*                          FUZZ TESTS                        */
     /*-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»*/
 
     function testFuzz_UnknownSelector_CannotMutateState(bytes4 sel) public {
@@ -415,7 +415,7 @@ contract FunctionSelectorTest is Test {
     }
 
     /*«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-*/
-    /*                    7. PAYABILITY TESTS                     */
+    /*                       PAYABILITY TESTS                     */
     /*-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»*/
 
     function test_Dispatcher_ReceiveETH() public {
@@ -427,7 +427,7 @@ contract FunctionSelectorTest is Test {
     }
 
     /*«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-«-*/
-    /*                     8. GAS COMPARISON                      */
+    /*                        GAS COMPARISON                      */
     /*-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»-»*/
 
     function test_Gas_DirectCall() public {
