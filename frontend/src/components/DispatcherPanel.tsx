@@ -75,7 +75,7 @@ export function DispatcherPanel() {
                   setPresetIdx(Number(e.target.value));
                   setParams({});
                 }}
-                className="w-full border border-border rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-accent/60 bg-white"
+                className="w-full border border-border rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-accent/60 bg-card"
               >
                 {PRESET_FUNCTIONS.map((fn, i) => (
                   <option key={fn.signature} value={i}>
@@ -105,7 +105,7 @@ export function DispatcherPanel() {
               ))
             ) : (
               <p className="text-xs text-text-muted py-3 text-center border border-border rounded bg-bg">
-                No arguments — only the 4-byte selector will be sent.
+                No arguments. Only the 4-byte selector will be sent.
               </p>
             )}
           </div>
@@ -163,7 +163,7 @@ export function DispatcherPanel() {
             <div className="mt-0.5 bg-bg rounded px-3 py-2.5 border border-border font-mono text-xs space-y-1.5 break-all">
               <div className="flex gap-2">
                 <span className="text-accent font-medium shrink-0">[0:4]</span>
-                <span className="text-text">{selectorHex || "—"}</span>
+                <span className="text-text">{selectorHex || "0x..."}</span>
               </div>
               {argsHex && (
                 <div className="flex gap-2">
@@ -193,7 +193,7 @@ export function DispatcherPanel() {
             </div>
           ) : (
             <p className="text-xs text-text-muted text-center py-2">
-              Ready — waiting for transaction.
+              Ready. Waiting for transaction.
             </p>
           )}
         </div>

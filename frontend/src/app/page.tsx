@@ -32,7 +32,7 @@ export default function Page() {
           RouteX
         </h1>
         <p className="text-sm text-text-secondary mt-1">
-          Selector dispatch protocol — dynamic calldata routing for EVM contracts.
+          Dynamic calldata routing and selector registry for EVM contracts.
         </p>
       </div>
 
@@ -74,7 +74,7 @@ export default function Page() {
 
       {/* Footer */}
       <footer className="border-t border-border py-6 text-center text-xs text-text-muted">
-        RouteX — Solidity ^0.8.24
+        RouteX · Solidity ^0.8.24
       </footer>
     </div>
   );

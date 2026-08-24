@@ -16,7 +16,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "RouteX — Selector Dispatch Protocol",
+  title: "RouteX | Selector Dispatch Protocol",
   description:
     "Dynamic selector registry and calldata dispatch protocol for EVM smart contracts.",
 };
