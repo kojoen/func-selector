@@ -1,0 +1,34 @@
+{
+  "name": "routex-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Production Web3 interface and developer playground for Function Selector routing architecture",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@rainbow-me/rainbowkit": "^2.1.4",
+    "@tanstack/react-query": "^5.51.23",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.428.0",
+    "next": "^14.2.24",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "sonner": "^1.5.0",
+    "tailwind-merge": "^2.5.2",
+    "viem": "^2.19.4",
+    "wagmi": "^2.12.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.41",
+    "tailwindcss": "^3.4.9",
+    "typescript": "^5"
+  }
+}
