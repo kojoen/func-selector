@@ -12,3 +12,27 @@ body {
   background: #e8553a;
   color: white;
 }
+
+/* Force dark bg on all form inputs */
+input,
+textarea,
+select,
+option {
+  background-color: #111113;
+  color: #ececef;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #5c5c63;
+}
+
+/* Fix browser autofill white flash */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 30px #111113 inset !important;
+  -webkit-text-fill-color: #ececef !important;
+  caret-color: #ececef;
+}
