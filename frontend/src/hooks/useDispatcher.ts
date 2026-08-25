@@ -21,7 +21,7 @@ export function useDispatcher() {
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const { chainId } = useAccount();
+  const { address, chainId } = useAccount();
   const { switchChainAsync } = useSwitchChain();
   const publicClient = usePublicClient({ chainId: sepolia.id }) || sepoliaPublicClient;
   const { sendTransactionAsync } = useSendTransaction();
@@ -37,9 +37,10 @@ export function useDispatcher() {
         await switchChainAsync({ chainId: sepolia.id });
       }
 
-      // 2. Simulate on-chain via eth_call
+      // 2. Simulate on-chain via eth_call with connected account context
       try {
         const simulation = await publicClient.call({
+          account: address,
           to: CONTRACT_ADDRESSES.dispatcher,
           data: calldata,
           value,

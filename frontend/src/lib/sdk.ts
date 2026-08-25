@@ -163,7 +163,6 @@ export class FunctionSelectorSDK {
     if (typeof err.cause?.data === "string" && err.cause.data.startsWith("0x")) return err.cause.data as Hex;
     if (typeof err.cause?.cause?.data === "string" && err.cause.cause.data.startsWith("0x")) return err.cause.cause.data as Hex;
 
-    // Search inside err.details / err.message for hex patterns
     const msg = err.message || "";
     const hexMatch = msg.match(/0x[a-fA-F0-9]{8,}/);
     if (hexMatch) return hexMatch[0] as Hex;
@@ -172,7 +171,7 @@ export class FunctionSelectorSDK {
   }
 
   /**
-   * Decodes custom EVM errors returned by Dispatcher, Registry, or Facets into human-readable text.
+   * Decodes custom EVM errors returned by Dispatcher, Registry, or Facets into clear English text.
    */
   static decodeCustomError(err: any): string {
     const errorData = this.extractErrorHex(err);
@@ -186,22 +185,22 @@ export class FunctionSelectorSDK {
             const args: any = decoded.args || [];
             const balanceFormatted = formatUnits(args[1] || 0n, 18);
             const requestedFormatted = formatUnits(args[2] || 0n, 18);
-            return `Saldo Tidak Cukup: Saldo Anda ${balanceFormatted} TEST, tetapi Anda mencoba mengirim ${requestedFormatted} TEST.`;
+            return `Insufficient Balance: Account balance is ${balanceFormatted} TEST, but attempted to transfer ${requestedFormatted} TEST.`;
           }
           if (decoded.errorName === "InvalidAddress") {
-            return "Alamat Penerima Tidak Valid (tidak boleh address 0x0).";
+            return "Invalid Recipient Address: Cannot transfer to the zero address (0x0).";
           }
           if (decoded.errorName === "DivisionByZero") {
-            return "Pembagian / Modulo dengan angka nol tidak diperbolehkan (Division By Zero).";
+            return "Division or modulo by zero is prohibited (DivisionByZero).";
           }
           if (decoded.errorName === "CalldataTooShort") {
-            return "Calldata Terlalu Pendek (minimal 4 bytes function selector).";
+            return "Calldata Too Short: Minimum 4-byte function selector is required.";
           }
           if (decoded.errorName === "UnknownSelector") {
-            return `Function Selector ${(decoded.args as any)?.[0] || ""} belum terdaftar di FunctionRegistry.`;
+            return `Unknown Function Selector ${(decoded.args as any)?.[0] || ""} is not registered in FunctionRegistry.`;
           }
           if (decoded.errorName === "Unauthorized") {
-            return "Akses Ditolak: Hanya Owner kontrak yang memiliki hak akses.";
+            return "Unauthorized Access: Only the contract owner can execute this action.";
           }
           return `Reverted: ${decoded.errorName}(${decoded.args ? JSON.stringify(decoded.args) : ""})`;
         } catch {}

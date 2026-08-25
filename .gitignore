@@ -9,6 +9,7 @@ out/
 
 # Agent skill definitions for local tooling only, not part of the project
 .agents/
+AGENTS.md
 
 # GitHub Actions / CI config for excluded from repo
 .github/
