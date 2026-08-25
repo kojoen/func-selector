@@ -1,17 +1,27 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useAccount, usePublicClient } from "wagmi";
+import { useState, useEffect, useCallback } from "react";
+import { useAccount, useSwitchChain } from "wagmi";
+import { sepolia } from "wagmi/chains";
 import { CONTRACT_ADDRESSES } from "../config/contracts";
 import { FunctionSelectorSDK } from "../lib/sdk";
-import { useDispatcher } from "../hooks/useDispatcher";
+import { useDispatcher, sepoliaPublicClient } from "../hooks/useDispatcher";
 import { toast } from "sonner";
 import { type Hex, type Address, isAddress, formatUnits, parseUnits } from "viem";
-import { Coins, Calculator, ArrowRight, RefreshCw, Send, CheckCircle2, Sparkles } from "lucide-react";
+import {
+  Coins,
+  Calculator,
+  RefreshCw,
+  Send,
+  CheckCircle2,
+  Sparkles,
+  AlertTriangle,
+  ExternalLink,
+} from "lucide-react";
 
 export function FacetStudio() {
-  const { address, isConnected } = useAccount();
-  const publicClient = usePublicClient();
+  const { address, isConnected, chainId } = useAccount();
+  const { switchChainAsync } = useSwitchChain();
   const { executeCalldata, isExecuting } = useDispatcher();
 
   const [activeFacet, setActiveFacet] = useState<"token" | "calc">("token");
@@ -23,6 +33,7 @@ export function FacetStudio() {
   const [transferTo, setTransferTo] = useState("");
   const [transferAmount, setTransferAmount] = useState("10");
   const [mintAmount, setMintAmount] = useState("100");
+  const [lastTxHash, setLastTxHash] = useState<string | null>(null);
 
   // Calculator facet state
   const [calcOp, setCalcOp] = useState<"add" | "sub" | "mul" | "div" | "mod">("add");
@@ -31,13 +42,14 @@ export function FacetStudio() {
   const [calcResult, setCalcResult] = useState<string | null>(null);
   const [isSimulatingCalc, setIsSimulatingCalc] = useState(false);
 
-  // Fetch Token State via Dispatcher
-  const fetchTokenState = async () => {
-    if (!publicClient) return;
+  const isWrongNetwork = isConnected && chainId !== sepolia.id;
+
+  // Fetch Token State via Dispatcher using reliable Sepolia RPC
+  const fetchTokenState = useCallback(async () => {
     setIsLoadingToken(true);
     try {
       // 1. Fetch Total Supply (selector 0x18160ddd)
-      const totalRes = await publicClient.call({
+      const totalRes = await sepoliaPublicClient.call({
         to: CONTRACT_ADDRESSES.dispatcher,
         data: "0x18160ddd",
       });
@@ -51,9 +63,9 @@ export function FacetStudio() {
         const balCalldata = FunctionSelectorSDK.encodeCalldata(
           "0x70a08231",
           ["address"],
-          [address]
+          [address as Address]
         );
-        const balRes = await publicClient.call({
+        const balRes = await sepoliaPublicClient.call({
           to: CONTRACT_ADDRESSES.dispatcher,
           data: balCalldata,
         });
@@ -63,17 +75,15 @@ export function FacetStudio() {
         }
       }
     } catch (err: any) {
-      console.error("Error reading token facet:", err);
+      console.error("Error reading token facet on Sepolia:", err);
     } finally {
       setIsLoadingToken(false);
     }
-  };
+  }, [address]);
 
   useEffect(() => {
-    if (isConnected) {
-      fetchTokenState();
-    }
-  }, [isConnected, address, publicClient]);
+    fetchTokenState();
+  }, [fetchTokenState]);
 
   // Handle Token Mint
   const handleMint = async () => {
@@ -81,17 +91,32 @@ export function FacetStudio() {
       toast.error("Please connect wallet first");
       return;
     }
+    if (isWrongNetwork && switchChainAsync) {
+      try {
+        await switchChainAsync({ chainId: sepolia.id });
+      } catch {
+        toast.error("Please switch your wallet to Sepolia Testnet");
+        return;
+      }
+    }
+
     try {
-      toast.loading("Minting tokens via Dispatcher...", { id: "facet-action" });
+      toast.loading("Minting tokens via Dispatcher (waiting for block confirmation)...", {
+        id: "facet-action",
+      });
       const amountWei = parseUnits(mintAmount || "100", 18);
       const calldata = FunctionSelectorSDK.encodeCalldata(
         "0x40c10f19", // mint(address,uint256)
         ["address", "uint256"],
-        [address, amountWei]
+        [address as Address, amountWei]
       );
-      await executeCalldata(calldata, 0n);
-      toast.success(`Minted ${mintAmount} TEST tokens!`, { id: "facet-action" });
-      setTimeout(fetchTokenState, 1500);
+
+      const txHash = await executeCalldata(calldata, 0n);
+      setLastTxHash(txHash || null);
+      toast.success(`Successfully minted ${mintAmount} TEST tokens!`, {
+        id: "facet-action",
+      });
+      await fetchTokenState();
     } catch (err: any) {
       toast.error(err.message || "Minting failed", { id: "facet-action" });
     }
@@ -103,18 +128,31 @@ export function FacetStudio() {
       toast.error("Invalid recipient address");
       return;
     }
+    if (isWrongNetwork && switchChainAsync) {
+      try {
+        await switchChainAsync({ chainId: sepolia.id });
+      } catch {
+        toast.error("Please switch your wallet to Sepolia Testnet");
+        return;
+      }
+    }
+
     try {
-      toast.loading("Transferring via Dispatcher...", { id: "facet-action" });
+      toast.loading("Transferring via Dispatcher (waiting for block confirmation)...", {
+        id: "facet-action",
+      });
       const amountWei = parseUnits(transferAmount || "0", 18);
       const calldata = FunctionSelectorSDK.encodeCalldata(
         "0xa9059cbb", // transfer(address,uint256)
         ["address", "uint256"],
         [transferTo as Address, amountWei]
       );
-      await executeCalldata(calldata, 0n);
+
+      const txHash = await executeCalldata(calldata, 0n);
+      setLastTxHash(txHash || null);
       toast.success(`Transferred ${transferAmount} TEST tokens!`, { id: "facet-action" });
       setTransferTo("");
-      setTimeout(fetchTokenState, 1500);
+      await fetchTokenState();
     } catch (err: any) {
       toast.error(err.message || "Transfer failed", { id: "facet-action" });
     }
@@ -122,15 +160,16 @@ export function FacetStudio() {
 
   // Handle Calculator Simulation & Execution
   const handleSimulateCalc = async () => {
-    if (!publicClient) return;
     setIsSimulatingCalc(true);
+    setCalcResult(null);
+
     try {
       const opSelectors: Record<string, Hex> = {
         add: "0x771602f7",
         sub: "0xb67d77c5",
         mul: "0xc8a4ac9c",
         div: "0xa391c15b",
-        mod: "0xf4f3bdc1",
+        mod: "0xf43f523a",
       };
       const sel = opSelectors[calcOp];
       const calldata = FunctionSelectorSDK.encodeCalldata(
@@ -139,7 +178,7 @@ export function FacetStudio() {
         [BigInt(calcA || 0), BigInt(calcB || 1)]
       );
 
-      const simRes = await publicClient.call({
+      const simRes = await sepoliaPublicClient.call({
         to: CONTRACT_ADDRESSES.dispatcher,
         data: calldata,
       });
@@ -147,11 +186,13 @@ export function FacetStudio() {
       if (simRes.data && simRes.data !== "0x") {
         const decoded = BigInt(simRes.data).toString();
         setCalcResult(decoded);
-        toast.success(`Calculated: ${decoded}`);
+        toast.success(`Calculation Result: ${decoded}`, { id: "calc-toast" });
+      } else {
+        toast.error("No return data received from Dispatcher");
       }
     } catch (err: any) {
       const errMsg = FunctionSelectorSDK.decodeCustomError(err);
-      toast.error(errMsg);
+      toast.error(`Execution Reverted: ${errMsg}`);
     } finally {
       setIsSimulatingCalc(false);
     }
@@ -159,6 +200,26 @@ export function FacetStudio() {
 
   return (
     <div className="space-y-6">
+      {/* Network Warning Banner if user is connected to wrong chain */}
+      {isWrongNetwork && (
+        <div className="bg-err/10 border border-err/30 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 text-err font-medium">
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            <span>
+              Your wallet is connected to a different network. Contracts are deployed on <strong>Sepolia Testnet</strong>.
+            </span>
+          </div>
+          {switchChainAsync && (
+            <button
+              onClick={() => switchChainAsync({ chainId: sepolia.id })}
+              className="font-semibold text-white bg-err hover:bg-err/90 px-3 py-1.5 rounded-lg transition shrink-0"
+            >
+              Switch to Sepolia
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Workspace Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -167,7 +228,7 @@ export function FacetStudio() {
             Live Facet Execution Studio
           </h3>
           <p className="text-xs text-text-secondary mt-0.5">
-            Test and interact with deployed smart contract facets routed dynamically through the Dispatcher.
+            Interact with deployed smart contract facets routed dynamically through the Dispatcher on Sepolia.
           </p>
         </div>
 
@@ -205,7 +266,7 @@ export function FacetStudio() {
           <div className="bg-card border border-border rounded-xl p-5 space-y-5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-text uppercase tracking-wider">
-                Facet State
+                Facet State (Sepolia)
               </span>
               <button
                 onClick={fetchTokenState}
@@ -221,7 +282,7 @@ export function FacetStudio() {
               <div className="bg-bg border border-border rounded-lg p-3.5">
                 <span className="text-xs text-text-muted">Your Wallet Balance</span>
                 <div className="flex items-baseline gap-2 mt-1">
-                  <span className="font-mono text-xl font-bold text-accent">
+                  <span className="font-mono text-2xl font-bold text-accent">
                     {Number(balance).toLocaleString(undefined, { maximumFractionDigits: 4 })}
                   </span>
                   <span className="text-xs font-medium text-text-secondary">TEST</span>
@@ -259,11 +320,16 @@ export function FacetStudio() {
                 <button
                   onClick={handleMint}
                   disabled={isExecuting || !isConnected}
-                  className="flex-1 text-xs font-semibold text-white bg-accent hover:bg-accent-hover py-1.5 rounded transition disabled:opacity-40"
+                  className="flex-1 text-xs font-semibold text-white bg-accent hover:bg-accent-hover py-2 rounded-lg transition disabled:opacity-40"
                 >
-                  {isExecuting ? "Minting..." : "Mint Test Tokens"}
+                  {isExecuting ? "Minting & Mining..." : "Mint Test Tokens"}
                 </button>
               </div>
+              {!isConnected && (
+                <p className="text-[11px] text-text-muted text-center">
+                  Connect wallet on Sepolia to mint
+                </p>
+              )}
             </div>
           </div>
 
@@ -308,20 +374,39 @@ export function FacetStudio() {
               </div>
             </div>
 
-            <div className="pt-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div className="text-[11px] text-text-muted flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-ok shrink-0" />
-                <span>Transaction will be delegated to <code className="text-text font-mono">MockToken.sol</code></span>
-              </div>
+            <div className="space-y-3 pt-4 border-t border-border">
+              {lastTxHash && (
+                <div className="bg-bg border border-border rounded-lg p-2.5 flex items-center justify-between text-xs font-mono text-text-secondary">
+                  <span>Last Confirmed Tx:</span>
+                  <a
+                    href={`https://sepolia.etherscan.io/tx/${lastTxHash}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-1 text-accent hover:underline"
+                  >
+                    <span>{lastTxHash.slice(0, 14)}...</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+              )}
 
-              <button
-                onClick={handleTransfer}
-                disabled={isExecuting || !transferTo || !isConnected}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 text-xs font-semibold text-white bg-accent hover:bg-accent-hover px-5 py-2.5 rounded-lg transition disabled:opacity-40"
-              >
-                <Send className="w-3.5 h-3.5" />
-                <span>{isExecuting ? "Executing..." : "Send Transfer"}</span>
-              </button>
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="text-[11px] text-text-muted flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-ok shrink-0" />
+                  <span>
+                    Delegated to <code className="text-text font-mono">MockToken.sol</code>
+                  </span>
+                </div>
+
+                <button
+                  onClick={handleTransfer}
+                  disabled={isExecuting || !transferTo || !isConnected}
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 text-xs font-semibold text-white bg-accent hover:bg-accent-hover px-5 py-2.5 rounded-lg transition disabled:opacity-40"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>{isExecuting ? "Executing..." : "Send Transfer"}</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -336,7 +421,7 @@ export function FacetStudio() {
                 EVM Pure Math Execution Facet
               </span>
               <p className="text-xs text-text-secondary mt-0.5">
-                Executes arithmetic operations on-chain via stateless Pure functions delegated by the Dispatcher.
+                Executes arithmetic operations on Sepolia via stateless Pure functions delegated by the Dispatcher.
               </p>
             </div>
             <span className="text-xs font-mono text-accent bg-accent/10 px-2.5 py-1 rounded border border-accent/20">
@@ -372,7 +457,7 @@ export function FacetStudio() {
                 <option value="sub">- Subtract (0xb67d77c5)</option>
                 <option value="mul">× Multiply (0xc8a4ac9c)</option>
                 <option value="div">÷ Divide (0xa391c15b)</option>
-                <option value="mod">% Modulo (0xf4f3bdc1)</option>
+                <option value="mod">% Modulo (0xf43f523a)</option>
               </select>
             </div>
 
@@ -394,7 +479,7 @@ export function FacetStudio() {
           <div className="bg-bg border border-border rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <span className="text-xs text-text-muted">On-chain Result:</span>
-              <span className="font-mono text-xl font-bold text-accent">
+              <span className="font-mono text-2xl font-bold text-accent">
                 {calcResult !== null ? calcResult : "--"}
               </span>
             </div>
@@ -406,7 +491,7 @@ export function FacetStudio() {
                 className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 text-xs font-semibold text-white bg-accent hover:bg-accent-hover px-5 py-2.5 rounded-lg transition disabled:opacity-40"
               >
                 <Calculator className="w-3.5 h-3.5" />
-                <span>{isSimulatingCalc ? "Simulating..." : "Calculate On-Chain (eth_call)"}</span>
+                <span>{isSimulatingCalc ? "Calculating..." : "Calculate On-Chain (eth_call)"}</span>
               </button>
             </div>
           </div>

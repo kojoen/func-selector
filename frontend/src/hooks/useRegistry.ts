@@ -1,4 +1,5 @@
 import { useReadContract, useReadContracts, useAccount, useWriteContract } from "wagmi";
+import { sepolia } from "wagmi/chains";
 import { FunctionRegistryAbi } from "../config/abis";
 import { CONTRACT_ADDRESSES, type SelectorItem } from "../config/contracts";
 import { type Address, type Hex } from "viem";
@@ -7,14 +8,15 @@ import { useMemo } from "react";
 export function useRegistry() {
   const { address } = useAccount();
 
-  // 1. Read Owner
+  // 1. Read Owner from Sepolia
   const { data: owner } = useReadContract({
     address: CONTRACT_ADDRESSES.registry,
     abi: FunctionRegistryAbi,
     functionName: "owner",
+    chainId: sepolia.id,
   });
 
-  // 2. Read All Selectors
+  // 2. Read All Selectors from Sepolia
   const {
     data: allSelectors,
     isLoading: isLoadingSelectors,
@@ -23,9 +25,10 @@ export function useRegistry() {
     address: CONTRACT_ADDRESSES.registry,
     abi: FunctionRegistryAbi,
     functionName: "getAllSelectors",
+    chainId: sepolia.id,
   });
 
-  // 3. Batch Read Implementation & Signature for each selector
+  // 3. Batch Read Implementation & Signature for each selector from Sepolia
   const contractsToRead = useMemo(() => {
     if (!allSelectors || allSelectors.length === 0) return [];
     return allSelectors.flatMap((sel) => [
@@ -34,12 +37,14 @@ export function useRegistry() {
         abi: FunctionRegistryAbi,
         functionName: "getImplementation" as const,
         args: [sel],
+        chainId: sepolia.id,
       },
       {
         address: CONTRACT_ADDRESSES.registry,
         abi: FunctionRegistryAbi,
         functionName: "getSignature" as const,
         args: [sel],
+        chainId: sepolia.id,
       },
     ]);
   }, [allSelectors]);
@@ -71,6 +76,7 @@ export function useRegistry() {
       abi: FunctionRegistryAbi,
       functionName: "register",
       args: [selector, implementation, signature],
+      chainId: sepolia.id,
     });
   };
 
@@ -80,6 +86,7 @@ export function useRegistry() {
       abi: FunctionRegistryAbi,
       functionName: "replace",
       args: [selector, newImplementation],
+      chainId: sepolia.id,
     });
   };
 
@@ -89,6 +96,7 @@ export function useRegistry() {
       abi: FunctionRegistryAbi,
       functionName: "remove",
       args: [selector],
+      chainId: sepolia.id,
     });
   };
 

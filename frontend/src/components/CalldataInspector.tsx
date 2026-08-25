@@ -1,15 +1,14 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { usePublicClient } from "wagmi";
 import { CONTRACT_ADDRESSES, PRESET_FUNCTIONS } from "../config/contracts";
 import { FunctionSelectorSDK, type DisassembledCalldata } from "../lib/sdk";
+import { sepoliaPublicClient } from "../hooks/useDispatcher";
 import { toast } from "sonner";
 import { type Hex } from "viem";
-import { Binary, Play, Copy, Check, Search, ShieldAlert, Sparkles } from "lucide-react";
+import { Binary, Play, Copy, Check, ShieldAlert, Sparkles } from "lucide-react";
 
 export function CalldataInspector() {
-  const publicClient = usePublicClient();
   const [rawInput, setRawInput] = useState<string>(
     "0xa9059cbb00000000000000000000000054254040faf67f85e96617d3ec600248c4b3ad370000000000000000000000000000000000000000000000056bc75e2d63100000"
   );
@@ -29,10 +28,6 @@ export function CalldataInspector() {
   };
 
   const handleSimulate = async () => {
-    if (!publicClient) {
-      toast.error("RPC client not ready");
-      return;
-    }
     if (!disassembled.isValid) {
       toast.error("Invalid calldata format");
       return;
@@ -42,13 +37,13 @@ export function CalldataInspector() {
     setSimulationResult(null);
 
     try {
-      toast.loading("Simulating via eth_call on Dispatcher...", { id: "sim" });
-      const res = await publicClient.call({
+      toast.loading("Simulating via eth_call on Sepolia Dispatcher...", { id: "sim" });
+      const res = await sepoliaPublicClient.call({
         to: CONTRACT_ADDRESSES.dispatcher,
         data: rawInput.trim() as Hex,
       });
 
-      if (res.data) {
+      if (res.data && res.data !== "0x") {
         setSimulationResult(`Success (Return Data: ${res.data})`);
         toast.success("Execution simulation succeeded!", { id: "sim" });
       } else {
@@ -91,7 +86,7 @@ export function CalldataInspector() {
             EVM Calldata Disassembler & Simulation Studio
           </h3>
           <p className="text-xs text-text-secondary mt-0.5">
-            Inspect raw byte-level transaction calldata, slice 32-byte parameter words, and simulate execution via <code className="text-accent font-mono bg-bg px-1 py-0.5 rounded">eth_call</code>.
+            Inspect raw byte-level transaction calldata, slice 32-byte parameter words, and simulate execution via <code className="text-accent font-mono bg-bg px-1 py-0.5 rounded">eth_call</code> on Sepolia.
           </p>
         </div>
 
