@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { type SelectorItem } from "../config/contracts";
+import { type SelectorItem, CONTRACT_ADDRESSES } from "../config/contracts";
 import { formatAddress } from "../lib/utils";
 import { RegisterModal } from "./RegisterModal";
 import { toast } from "sonner";
 import { type Hex, type Address } from "viem";
+import { Search, RefreshCw, Plus, Copy, Check, ArrowRightLeft, Trash2, Layers, ShieldCheck } from "lucide-react";
 
 interface RoutingTableProps {
   routes: SelectorItem[];
@@ -41,125 +42,160 @@ export function RoutingTable({
   const copy = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
     setCopied(key);
+    toast.success(`Copied: ${text.slice(0, 12)}...`);
     setTimeout(() => setCopied(null), 1200);
   };
 
   const handleRemove = async (selector: Hex, sig: string) => {
-    if (!confirm(`Remove route "${sig}" (${selector})?`)) return;
+    if (!confirm(`Are you sure you want to remove route for "${sig}" (${selector})?`)) return;
     try {
-      toast.loading("Removing...", { id: "rm" });
+      toast.loading("Removing route from registry...", { id: "rm" });
       await onRemove(selector);
-      toast.success("Removed", { id: "rm" });
+      toast.success("Route removed successfully", { id: "rm" });
       onRefresh();
     } catch (err: any) {
-      toast.error(err.message || "Failed", { id: "rm" });
+      toast.error(err.shortMessage || err.message || "Failed to remove route", { id: "rm" });
     }
+  };
+
+  const getFacetName = (impl: Address) => {
+    const clean = impl.toLowerCase();
+    if (clean === CONTRACT_ADDRESSES.mockCalc.toLowerCase()) return "MockCalc Facet";
+    if (clean === CONTRACT_ADDRESSES.mockToken.toLowerCase()) return "MockToken Facet";
+    return "Custom Facet";
   };
 
   return (
     <div className="space-y-4">
-      {/* Controls */}
+      {/* Search & Actions Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <input
-          type="text"
-          placeholder="Search by signature, selector, or address..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full sm:w-80 border border-border rounded px-3 py-2 text-sm placeholder:text-text-muted focus:outline-none focus:border-accent/60"
-        />
+        <div className="relative flex-1 max-w-md">
+          <Search className="w-4 h-4 text-text-muted absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Search by signature, 4-byte selector, or address..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full bg-card border border-border rounded-lg pl-9 pr-3 py-2 text-xs text-text placeholder:text-text-muted focus:outline-none focus:border-accent"
+          />
+        </div>
+
         <div className="flex items-center gap-2">
           <button
             onClick={onRefresh}
             disabled={isLoading}
-            className="text-sm text-text-secondary hover:text-text px-3 py-2 border border-border rounded transition disabled:opacity-40"
+            className="flex items-center gap-1.5 text-xs text-text-secondary hover:text-text bg-card border border-border px-3.5 py-2 rounded-lg transition disabled:opacity-40"
           >
-            {isLoading ? "Syncing..." : "Refresh"}
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
+            <span>{isLoading ? "Syncing..." : "Refresh"}</span>
           </button>
+
           {isOwner && (
             <button
               onClick={() => {
                 setEditItem(null);
                 setModalOpen(true);
               }}
-              className="text-sm font-medium text-white bg-accent hover:bg-accent-hover px-4 py-2 rounded transition"
+              className="flex items-center gap-1.5 text-xs font-semibold text-white bg-accent hover:bg-accent-hover px-4 py-2 rounded-lg transition shadow-sm"
             >
-              + Register
+              <Plus className="w-3.5 h-3.5" />
+              <span>Register Route</span>
             </button>
           )}
         </div>
       </div>
 
       {/* Table */}
-      <div className="border border-border rounded bg-card overflow-x-auto">
-        <table className="w-full text-left text-sm">
+      <div className="border border-border rounded-xl bg-card overflow-x-auto shadow-sm">
+        <table className="w-full text-left text-xs">
           <thead>
-            <tr className="border-b border-border text-xs text-text-secondary">
-              <th className="px-4 py-3 font-medium">Selector</th>
-              <th className="px-4 py-3 font-medium">Signature</th>
-              <th className="px-4 py-3 font-medium">Implementation</th>
-              {isOwner && <th className="px-4 py-3 font-medium text-right">Actions</th>}
+            <tr className="border-b border-border text-[11px] font-semibold text-text-secondary uppercase tracking-wider bg-bg/40">
+              <th className="px-5 py-3">Selector</th>
+              <th className="px-5 py-3">Function Signature</th>
+              <th className="px-5 py-3">Facet Implementation</th>
+              {isOwner && <th className="px-5 py-3 text-right">Admin Actions</th>}
             </tr>
           </thead>
-          <tbody className="divide-y divide-border">
+          <tbody className="divide-y divide-border font-mono">
             {isLoading && routes.length === 0 ? (
               <tr>
-                <td colSpan={isOwner ? 4 : 3} className="px-4 py-12 text-center text-text-muted text-sm">
-                  Loading routes...
+                <td colSpan={isOwner ? 4 : 3} className="px-5 py-12 text-center text-text-muted">
+                  <div className="flex items-center justify-center gap-2">
+                    <RefreshCw className="w-4 h-4 animate-spin text-accent" />
+                    <span>Loading routes from on-chain FunctionRegistry...</span>
+                  </div>
                 </td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={isOwner ? 4 : 3} className="px-4 py-12 text-center text-text-muted text-sm">
-                  {routes.length === 0 ? "No routes registered yet." : "No results for this search."}
+                <td colSpan={isOwner ? 4 : 3} className="px-5 py-12 text-center text-text-muted">
+                  {routes.length === 0 ? "No active routes registered in contract." : "No results match your search query."}
                 </td>
               </tr>
             ) : (
               filtered.map((route) => (
-                <tr key={route.selector} className="hover:bg-bg transition">
+                <tr key={route.selector} className="hover:bg-bg/60 transition">
                   {/* Selector */}
-                  <td className="px-4 py-3">
+                  <td className="px-5 py-3.5">
                     <button
                       onClick={() => copy(route.selector, route.selector)}
-                      className="font-mono text-xs text-accent hover:underline"
+                      className="group flex items-center gap-1.5 font-bold text-accent hover:underline"
                     >
-                      {copied === route.selector ? "copied!" : route.selector}
+                      <span>{route.selector}</span>
+                      {copied === route.selector ? (
+                        <Check className="w-3 h-3 text-ok" />
+                      ) : (
+                        <Copy className="w-3 h-3 opacity-0 group-hover:opacity-100 transition text-text-muted" />
+                      )}
                     </button>
                   </td>
 
                   {/* Signature */}
-                  <td className="px-4 py-3 font-mono text-xs text-text">
+                  <td className="px-5 py-3.5 text-text font-medium">
                     {route.signature}
                   </td>
 
                   {/* Implementation */}
-                  <td className="px-4 py-3">
-                    <button
-                      onClick={() => copy(route.implementation, `impl-${route.selector}`)}
-                      className="font-mono text-xs text-text-secondary hover:text-text"
-                    >
-                      {copied === `impl-${route.selector}`
-                        ? "copied!"
-                        : formatAddress(route.implementation, 6)}
-                    </button>
+                  <td className="px-5 py-3.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] uppercase font-sans font-semibold text-text-muted bg-bg border border-border px-1.5 py-0.5 rounded">
+                        {getFacetName(route.implementation)}
+                      </span>
+                      <button
+                        onClick={() => copy(route.implementation, `impl-${route.selector}`)}
+                        className="group flex items-center gap-1 text-text-secondary hover:text-text"
+                      >
+                        <span>{formatAddress(route.implementation, 6)}</span>
+                        {copied === `impl-${route.selector}` ? (
+                          <Check className="w-3 h-3 text-ok" />
+                        ) : (
+                          <Copy className="w-3 h-3 opacity-0 group-hover:opacity-100 transition text-text-muted" />
+                        )}
+                      </button>
+                    </div>
                   </td>
 
                   {/* Actions */}
                   {isOwner && (
-                    <td className="px-4 py-3 text-right space-x-2">
+                    <td className="px-5 py-3.5 text-right space-x-2 font-sans">
                       <button
                         onClick={() => {
                           setEditItem(route);
                           setModalOpen(true);
                         }}
-                        className="text-xs text-text-secondary hover:text-accent transition"
+                        title="Swap implementation target for this selector"
+                        className="inline-flex items-center gap-1 text-xs text-text-secondary hover:text-accent bg-bg border border-border px-2.5 py-1 rounded transition"
                       >
-                        Swap
+                        <ArrowRightLeft className="w-3 h-3" />
+                        <span>Swap</span>
                       </button>
                       <button
                         onClick={() => handleRemove(route.selector, route.signature)}
-                        className="text-xs text-text-secondary hover:text-err transition"
+                        title="Remove route from registry"
+                        className="inline-flex items-center gap-1 text-xs text-text-secondary hover:text-err bg-bg border border-border px-2.5 py-1 rounded transition"
                       >
-                        Remove
+                        <Trash2 className="w-3 h-3" />
+                        <span>Remove</span>
                       </button>
                     </td>
                   )}
@@ -170,10 +206,17 @@ export function RoutingTable({
         </table>
       </div>
 
-      {/* Count footer */}
-      <p className="text-xs text-text-muted">
-        {filtered.length} of {routes.length} routes
-      </p>
+      {/* Footer count */}
+      <div className="flex items-center justify-between text-xs text-text-muted px-1">
+        <span>
+          Showing <strong className="text-text">{filtered.length}</strong> of{" "}
+          <strong className="text-text">{routes.length}</strong> active routes
+        </span>
+        <span className="flex items-center gap-1">
+          <Layers className="w-3 h-3 text-accent" />
+          <span>Managed by O(1) FunctionRegistry.sol</span>
+        </span>
+      </div>
 
       <RegisterModal
         isOpen={modalOpen}
