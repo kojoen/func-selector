@@ -21,7 +21,7 @@ export function useDispatcher() {
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const { address, chainId } = useAccount();
+  const { address, isConnected, chainId } = useAccount();
   const { switchChainAsync } = useSwitchChain();
   const publicClient = usePublicClient({ chainId: sepolia.id }) || sepoliaPublicClient;
   const { sendTransactionAsync } = useSendTransaction();
@@ -32,6 +32,10 @@ export function useDispatcher() {
     setResult(null);
 
     try {
+      if (!address) {
+        throw new Error("Please connect your wallet first");
+      }
+
       // 1. Ensure wallet is on Sepolia
       if (chainId && chainId !== sepolia.id && switchChainAsync) {
         await switchChainAsync({ chainId: sepolia.id });
