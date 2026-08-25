@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { type SelectorItem } from "../config/contracts";
 import { FunctionSelectorSDK, type CollisionResult } from "../lib/sdk";
-import { ShieldCheck, AlertTriangle, CheckCircle2, ShieldAlert, FileCode2, HelpCircle } from "lucide-react";
+import { ShieldCheck, AlertTriangle, CheckCircle2, ShieldAlert, FileCode2 } from "lucide-react";
 
 export function SecurityAuditor({ routes }: { routes: SelectorItem[] }) {
   const [candidateSignatures, setCandidateSignatures] = useState<string>(
@@ -17,7 +17,6 @@ export function SecurityAuditor({ routes }: { routes: SelectorItem[] }) {
 
   const collisionResult: CollisionResult = FunctionSelectorSDK.detectCollisions(sigList);
 
-  // Health checks on active routes
   const zeroAddressRoutes = routes.filter(
     (r) => !r.implementation || r.implementation === "0x0000000000000000000000000000000000000000"
   );
@@ -38,7 +37,7 @@ export function SecurityAuditor({ routes }: { routes: SelectorItem[] }) {
       {/* Audit Checklist Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Check 1: Collision Test */}
-        <div className="bg-card border border-border rounded-xl p-4 space-y-2">
+        <div className="bg-card border border-border rounded-xl p-5 space-y-2 shadow-card">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-text uppercase tracking-wider">
               1. Selector Collision
@@ -59,7 +58,7 @@ export function SecurityAuditor({ routes }: { routes: SelectorItem[] }) {
         </div>
 
         {/* Check 2: Zero Address Target */}
-        <div className="bg-card border border-border rounded-xl p-4 space-y-2">
+        <div className="bg-card border border-border rounded-xl p-5 space-y-2 shadow-card">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-text uppercase tracking-wider">
               2. Facet Target Liveness
@@ -80,7 +79,7 @@ export function SecurityAuditor({ routes }: { routes: SelectorItem[] }) {
         </div>
 
         {/* Check 3: Delegatecall Storage Safety */}
-        <div className="bg-card border border-border rounded-xl p-4 space-y-2">
+        <div className="bg-card border border-border rounded-xl p-5 space-y-2 shadow-card">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-text uppercase tracking-wider">
               3. Storage Context
@@ -96,7 +95,7 @@ export function SecurityAuditor({ routes }: { routes: SelectorItem[] }) {
       </div>
 
       {/* Collision Scanner Playground */}
-      <div className="bg-card border border-border rounded-xl p-5 space-y-4">
+      <div className="bg-card border border-border rounded-xl p-6 space-y-4 shadow-card">
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold uppercase tracking-wider text-text">
             Interactive 4-Byte Collision Scanner
@@ -105,7 +104,7 @@ export function SecurityAuditor({ routes }: { routes: SelectorItem[] }) {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-text-secondary mb-1">
+          <label className="block text-xs font-medium text-text-secondary mb-1.5">
             Input Function Signatures (one per line):
           </label>
           <textarea
@@ -113,18 +112,18 @@ export function SecurityAuditor({ routes }: { routes: SelectorItem[] }) {
             value={candidateSignatures}
             onChange={(e) => setCandidateSignatures(e.target.value)}
             placeholder="transfer(address,uint256)..."
-            className="w-full bg-bg border border-border rounded-lg p-3 text-xs font-mono text-text placeholder:text-text-muted focus:outline-none focus:border-accent"
+            className="w-full bg-bg border border-border rounded-lg p-3.5 text-xs font-mono text-text placeholder:text-text-muted focus:outline-none focus:border-accent"
           />
         </div>
 
         {collisionResult.hasCollision ? (
-          <div className="bg-err/10 border border-err/30 rounded-lg p-4 space-y-2 text-xs text-err font-mono">
+          <div className="bg-err/10 border border-err/30 rounded-xl p-4 space-y-2 text-xs text-err font-mono">
             <div className="flex items-center gap-2 font-bold">
               <AlertTriangle className="w-4 h-4" />
               <span>CRITICAL: 4-Byte Collision Detected!</span>
             </div>
             {collisionResult.collisions.map((col, idx) => (
-              <div key={idx} className="bg-bg/80 p-2.5 rounded border border-err/20 space-y-1">
+              <div key={idx} className="bg-bg/80 p-3 rounded-lg border border-err/20 space-y-1">
                 <span className="text-text font-semibold">Selector: {col.selector}</span>
                 <ul className="list-disc pl-4 text-text-secondary">
                   {col.signatures.map((s, i) => (
@@ -135,9 +134,9 @@ export function SecurityAuditor({ routes }: { routes: SelectorItem[] }) {
             ))}
           </div>
         ) : (
-          <div className="bg-ok/10 border border-ok/30 rounded-lg p-3.5 flex items-center gap-2 text-xs text-ok font-mono">
+          <div className="bg-ok/10 border border-ok/30 rounded-xl p-4 flex items-center gap-2.5 text-xs text-ok font-mono">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
-            <span>Passed! No 4-byte selector hash collisions discovered among the candidate signatures.</span>
+            <span>Passed! No 4-byte selector hash collisions discovered among candidate signatures.</span>
           </div>
         )}
       </div>
@@ -148,7 +147,7 @@ export function SecurityAuditor({ routes }: { routes: SelectorItem[] }) {
           <FileCode2 className="w-4 h-4 text-accent" />
           <span>EVM Router Security Best Practices:</span>
         </div>
-        <ul className="list-disc pl-5 space-y-1.5 leading-relaxed text-[11px]">
+        <ul className="list-disc pl-5 space-y-2 leading-relaxed text-[11px]">
           <li>
             <strong>Avoid Plain Fallback Collisions:</strong> In <code className="text-accent">FunctionDispatcher.sol</code>, calldata with length &lt; 4 is rejected with <code className="text-accent">CalldataTooShort</code> to prevent accidental execution of empty selectors.
           </li>

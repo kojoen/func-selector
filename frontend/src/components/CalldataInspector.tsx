@@ -9,9 +9,7 @@ import { type Hex } from "viem";
 import { Binary, Play, Copy, Check, ShieldAlert, Sparkles } from "lucide-react";
 
 export function CalldataInspector() {
-  const [rawInput, setRawInput] = useState<string>(
-    "0xa9059cbb00000000000000000000000054254040faf67f85e96617d3ec600248c4b3ad370000000000000000000000000000000000000000000000056bc75e2d63100000"
-  );
+  const [rawInput, setRawInput] = useState<string>("");
   const [simulationResult, setSimulationResult] = useState<string | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -21,6 +19,7 @@ export function CalldataInspector() {
   }, [rawInput]);
 
   const handleCopy = (text: string) => {
+    if (!text) return;
     navigator.clipboard.writeText(text);
     setCopied(true);
     toast.success("Copied to clipboard");
@@ -29,7 +28,7 @@ export function CalldataInspector() {
 
   const handleSimulate = async () => {
     if (!disassembled.isValid) {
-      toast.error("Invalid calldata format");
+      toast.error("Please enter a valid hex calldata payload (minimum 4 bytes)");
       return;
     }
 
@@ -86,7 +85,7 @@ export function CalldataInspector() {
             EVM Calldata Disassembler & Simulation Studio
           </h3>
           <p className="text-xs text-text-secondary mt-0.5">
-            Inspect raw byte-level transaction calldata, slice 32-byte parameter words, and simulate execution via <code className="text-accent font-mono bg-bg px-1 py-0.5 rounded">eth_call</code> on Sepolia.
+            Inspect raw byte-level transaction calldata, slice 32-byte parameter words, and simulate execution via <code className="text-accent font-mono bg-bg px-1.5 py-0.5 rounded border border-border">eth_call</code> on Sepolia.
           </p>
         </div>
 
@@ -95,13 +94,13 @@ export function CalldataInspector() {
           <span className="text-xs text-text-muted">Load Preset:</span>
           <button
             onClick={() => loadPreset("0xa9059cbb")}
-            className="text-xs font-mono text-text-secondary hover:text-text bg-bg border border-border px-2 py-1 rounded"
+            className="text-xs font-mono text-text-secondary hover:text-text bg-bg border border-border hover:border-accent/40 px-2.5 py-1 rounded-md transition"
           >
             transfer()
           </button>
           <button
             onClick={() => loadPreset("0x771602f7")}
-            className="text-xs font-mono text-text-secondary hover:text-text bg-bg border border-border px-2 py-1 rounded"
+            className="text-xs font-mono text-text-secondary hover:text-text bg-bg border border-border hover:border-accent/40 px-2.5 py-1 rounded-md transition"
           >
             add()
           </button>
@@ -109,7 +108,7 @@ export function CalldataInspector() {
       </div>
 
       {/* Input Box */}
-      <div className="bg-card border border-border rounded-xl p-5 space-y-4">
+      <div className="bg-card border border-border rounded-xl p-6 space-y-4 shadow-card">
         <div>
           <label className="block text-xs font-medium text-text-secondary mb-1.5">
             Raw Hex Calldata (msg.data)
@@ -118,8 +117,8 @@ export function CalldataInspector() {
             rows={3}
             value={rawInput}
             onChange={(e) => setRawInput(e.target.value)}
-            placeholder="0x..."
-            className="w-full bg-bg border border-border rounded-lg p-3 text-xs font-mono text-text placeholder:text-text-muted focus:outline-none focus:border-accent"
+            placeholder="Paste 0x... calldata or select a preset above"
+            className="w-full bg-bg border border-border rounded-lg p-3.5 text-xs font-mono text-text placeholder:text-text-muted focus:outline-none focus:border-accent"
           />
         </div>
 
@@ -137,7 +136,8 @@ export function CalldataInspector() {
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <button
               onClick={() => handleCopy(rawInput)}
-              className="flex items-center gap-1.5 text-xs text-text-secondary hover:text-text bg-bg border border-border px-3 py-2 rounded-lg transition"
+              disabled={!rawInput}
+              className="flex items-center gap-1.5 text-xs text-text-secondary hover:text-text bg-bg border border-border px-3.5 py-2 rounded-lg transition disabled:opacity-30"
             >
               {copied ? <Check className="w-3.5 h-3.5 text-ok" /> : <Copy className="w-3.5 h-3.5" />}
               <span>Copy</span>
@@ -145,7 +145,7 @@ export function CalldataInspector() {
             <button
               onClick={handleSimulate}
               disabled={isSimulating || !disassembled.isValid}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 text-xs font-semibold text-white bg-accent hover:bg-accent-hover px-4 py-2 rounded-lg transition disabled:opacity-40"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 text-xs font-semibold text-white bg-accent hover:bg-accent-hover px-5 py-2.5 rounded-lg transition disabled:opacity-40 shadow-glow-sm"
             >
               <Play className="w-3.5 h-3.5" />
               <span>{isSimulating ? "Simulating..." : "Simulate Call (eth_call)"}</span>
@@ -162,9 +162,9 @@ export function CalldataInspector() {
           </h4>
 
           {/* Selector Card */}
-          <div className="bg-card border border-accent/30 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="bg-card border border-accent/30 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
             <div className="flex items-center gap-3">
-              <span className="text-xs font-mono font-bold text-accent bg-accent/10 px-2 py-1 rounded border border-accent/20">
+              <span className="text-xs font-mono font-bold text-accent bg-accent/10 px-2.5 py-1 rounded-md border border-accent/20">
                 Offset [0:4]
               </span>
               <div>
@@ -185,10 +185,10 @@ export function CalldataInspector() {
           {disassembled.chunks.map((chunk, idx) => (
             <div
               key={idx}
-              className="bg-card border border-border rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3"
+              className="bg-card border border-border rounded-xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-sm"
             >
               <div className="flex items-center gap-3">
-                <span className="text-xs font-mono text-text-muted bg-bg px-2 py-1 rounded border border-border">
+                <span className="text-xs font-mono text-text-muted bg-bg px-2.5 py-1 rounded-md border border-border">
                   Offset [{chunk.offset}:{chunk.offset + 32}]
                 </span>
                 <div>
@@ -199,7 +199,7 @@ export function CalldataInspector() {
                 </div>
               </div>
 
-              <div className="md:text-right text-xs text-text-muted font-mono bg-bg px-2.5 py-1 rounded border border-border/60">
+              <div className="md:text-right text-xs text-text-muted font-mono bg-bg px-3 py-1.5 rounded-lg border border-border/60">
                 {chunk.description}
               </div>
             </div>
@@ -208,7 +208,7 @@ export function CalldataInspector() {
           {/* Simulation Output Card */}
           {simulationResult && (
             <div
-              className={`p-4 rounded-xl border font-mono text-xs ${
+              className={`p-5 rounded-xl border font-mono text-xs ${
                 simulationResult.startsWith("Reverted")
                   ? "bg-err/10 border-err/30 text-err"
                   : "bg-ok/10 border-ok/30 text-ok"
@@ -226,11 +226,11 @@ export function CalldataInspector() {
             </div>
           )}
         </div>
-      ) : (
+      ) : rawInput.trim() ? (
         <div className="bg-err/10 border border-err/30 rounded-xl p-4 text-xs text-err font-mono">
           {disassembled.error}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

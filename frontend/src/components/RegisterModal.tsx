@@ -45,7 +45,7 @@ export function RegisterModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isAddress(implementation)) {
-      toast.error("Invalid address");
+      toast.error("Please enter a valid Ethereum address (0x...)");
       return;
     }
 
@@ -53,10 +53,10 @@ export function RegisterModal({
     try {
       if (isEdit) {
         await onReplace(selector as Hex, implementation as Address);
-        toast.success("Route updated");
+        toast.success("Route updated successfully");
       } else {
         await onRegister(selector as Hex, implementation as Address, signature.trim());
-        toast.success("Route registered");
+        toast.success("Route registered successfully");
       }
       onSuccess();
       onClose();
@@ -68,74 +68,74 @@ export function RegisterModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-md bg-card border border-border rounded-lg p-6 space-y-5">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="w-full max-w-md bg-card border border-border rounded-2xl p-6 space-y-5 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
         <div className="flex items-center justify-between">
-          <h3 className="text-base font-semibold text-text">
-            {isEdit ? "Swap Implementation" : "Register Route"}
+          <h3 className="text-base font-bold text-text">
+            {isEdit ? "Swap Implementation" : "Register New Route"}
           </h3>
-          <button onClick={onClose} className="text-text-muted hover:text-text text-lg">
+          <button onClick={onClose} className="text-text-muted hover:text-text text-xl p-1 transition">
             ×
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-text-secondary mb-1">
+            <label className="block text-xs font-medium text-text-secondary mb-1.5">
               Function Signature
             </label>
             <input
               type="text"
               required
               disabled={isEdit}
-              placeholder="transfer(address,uint256)"
+              placeholder="e.g. transfer(address,uint256)"
               value={signature}
               onChange={(e) => setSignature(e.target.value)}
-              className="w-full border border-border rounded px-3 py-2 text-sm font-mono placeholder:text-text-muted focus:outline-none focus:border-accent/60 disabled:opacity-50 disabled:bg-bg"
+              className="w-full bg-bg border border-border rounded-lg px-3.5 py-2.5 text-xs font-mono text-text placeholder:text-text-muted focus:outline-none focus:border-accent disabled:opacity-50 disabled:bg-bg/50"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-text-secondary mb-1">
-              Computed Selector
+            <label className="block text-xs font-medium text-text-secondary mb-1.5">
+              Computed 4-Byte Selector
             </label>
-            <div className="bg-bg border border-border rounded px-3 py-2 font-mono text-sm text-accent">
+            <div className="bg-bg border border-border rounded-lg px-3.5 py-2.5 font-mono text-xs text-accent font-semibold">
               {selector}
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-text-secondary mb-1">
-              Implementation Address
+            <label className="block text-xs font-medium text-text-secondary mb-1.5">
+              Implementation Contract Address
             </label>
             <input
               type="text"
               required
-              placeholder="0x..."
+              placeholder="0xImplementationAddress..."
               value={implementation}
               onChange={(e) => setImplementation(e.target.value)}
-              className="w-full border border-border rounded px-3 py-2 text-sm font-mono placeholder:text-text-muted focus:outline-none focus:border-accent/60"
+              className="w-full bg-bg border border-border rounded-lg px-3.5 py-2.5 text-xs font-mono text-text placeholder:text-text-muted focus:outline-none focus:border-accent"
             />
           </div>
 
-          <p className="text-xs text-text-muted">
-            The target contract will be called via DELEGATECALL in the Dispatcher&apos;s storage context.
+          <p className="text-[11px] text-text-muted leading-relaxed">
+            The target contract will be called via <code className="text-accent font-mono">DELEGATECALL</code> in the Dispatcher&apos;s storage context.
           </p>
 
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex justify-end gap-2.5 pt-3">
             <button
               type="button"
               onClick={onClose}
-              className="text-sm text-text-secondary hover:text-text px-4 py-2 rounded border border-border transition"
+              className="text-xs text-text-secondary hover:text-text px-4 py-2.5 rounded-xl border border-border transition hover:bg-bg"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting || !signature || !implementation}
-              className="text-sm font-medium text-white bg-accent hover:bg-accent-hover px-4 py-2 rounded transition disabled:opacity-40"
+              className="text-xs font-semibold text-white bg-accent hover:bg-accent-hover px-5 py-2.5 rounded-xl transition disabled:opacity-40 shadow-glow-sm"
             >
-              {submitting ? "Sending..." : isEdit ? "Update" : "Register"}
+              {submitting ? "Confirming..." : isEdit ? "Update Route" : "Register Route"}
             </button>
           </div>
         </form>

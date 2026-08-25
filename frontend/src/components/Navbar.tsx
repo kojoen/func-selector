@@ -16,12 +16,12 @@ export function Navbar({ isOwner }: { isOwner: boolean }) {
   };
 
   return (
-    <header className="border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-40">
+    <header className="border-b border-border/80 bg-card/60 backdrop-blur-xl sticky top-0 z-40">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 h-16">
         <div className="flex items-center gap-6">
           {/* Logo & Brand */}
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-accent/15 border border-accent/30 flex items-center justify-center text-accent shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-accent/15 border border-accent/30 flex items-center justify-center text-accent shadow-glow-sm">
               <Cpu className="w-4 h-4" />
             </div>
             <div>
@@ -29,7 +29,7 @@ export function Navbar({ isOwner }: { isOwner: boolean }) {
                 <span className="text-base font-bold tracking-tight text-text">
                   RouteX
                 </span>
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-accent bg-accent/10 px-1.5 py-0.5 rounded border border-accent/20">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-accent bg-accent/10 px-1.5 py-0.5 rounded-md border border-accent/20">
                   Protocol
                 </span>
               </div>
@@ -41,7 +41,7 @@ export function Navbar({ isOwner }: { isOwner: boolean }) {
             <button
               onClick={() => copy(CONTRACT_ADDRESSES.dispatcher, "dis")}
               title="Click to copy Dispatcher Contract Address"
-              className="group flex items-center gap-1.5 font-mono text-[11px] text-text-secondary hover:text-text bg-bg border border-border hover:border-accent/40 px-2.5 py-1 rounded transition"
+              className="group flex items-center gap-1.5 font-mono text-[11px] text-text-secondary hover:text-text bg-bg border border-border hover:border-accent/40 px-3 py-1.5 rounded-lg transition"
             >
               <span className="text-accent font-semibold">Dispatcher:</span>
               <span>{formatAddress(CONTRACT_ADDRESSES.dispatcher, 4)}</span>
@@ -55,7 +55,7 @@ export function Navbar({ isOwner }: { isOwner: boolean }) {
             <button
               onClick={() => copy(CONTRACT_ADDRESSES.registry, "reg")}
               title="Click to copy Registry Contract Address"
-              className="group flex items-center gap-1.5 font-mono text-[11px] text-text-secondary hover:text-text bg-bg border border-border hover:border-accent/40 px-2.5 py-1 rounded transition"
+              className="group flex items-center gap-1.5 font-mono text-[11px] text-text-secondary hover:text-text bg-bg border border-border hover:border-accent/40 px-3 py-1.5 rounded-lg transition"
             >
               <span className="text-text-muted">Registry:</span>
               <span>{formatAddress(CONTRACT_ADDRESSES.registry, 4)}</span>
@@ -67,7 +67,7 @@ export function Navbar({ isOwner }: { isOwner: boolean }) {
             </button>
 
             {isOwner && (
-              <span className="flex items-center gap-1 text-[11px] font-medium text-accent bg-accent/10 border border-accent/30 px-2.5 py-1 rounded">
+              <span className="flex items-center gap-1 text-[11px] font-medium text-accent bg-accent/10 border border-accent/30 px-2.5 py-1 rounded-md">
                 <ShieldCheck className="w-3 h-3" />
                 Admin
               </span>

@@ -17,6 +17,7 @@ import {
   Sparkles,
   AlertTriangle,
   ExternalLink,
+  ArrowRight,
 } from "lucide-react";
 
 export function FacetStudio() {
@@ -26,19 +27,19 @@ export function FacetStudio() {
 
   const [activeFacet, setActiveFacet] = useState<"token" | "calc">("token");
 
-  // Token facet state
+  // Token facet state - All empty by default (no hardcoded pre-filled values)
   const [balance, setBalance] = useState<string>("0");
   const [totalSupply, setTotalSupply] = useState<string>("0");
   const [isLoadingToken, setIsLoadingToken] = useState(false);
   const [transferTo, setTransferTo] = useState("");
-  const [transferAmount, setTransferAmount] = useState("10");
-  const [mintAmount, setMintAmount] = useState("100");
+  const [transferAmount, setTransferAmount] = useState("");
+  const [mintAmount, setMintAmount] = useState("");
   const [lastTxHash, setLastTxHash] = useState<string | null>(null);
 
-  // Calculator facet state
+  // Calculator facet state - Empty by default
   const [calcOp, setCalcOp] = useState<"add" | "sub" | "mul" | "div" | "mod">("add");
-  const [calcA, setCalcA] = useState("42");
-  const [calcB, setCalcB] = useState("18");
+  const [calcA, setCalcA] = useState("");
+  const [calcB, setCalcB] = useState("");
   const [calcResult, setCalcResult] = useState<string | null>(null);
   const [isSimulatingCalc, setIsSimulatingCalc] = useState(false);
 
@@ -88,9 +89,15 @@ export function FacetStudio() {
   // Handle Token Mint
   const handleMint = async () => {
     if (!address) {
-      toast.error("Please connect wallet first");
+      toast.error("Please connect your wallet first");
       return;
     }
+    const parsedAmount = Number(mintAmount);
+    if (!mintAmount || isNaN(parsedAmount) || parsedAmount <= 0) {
+      toast.error("Please enter a valid positive mint amount");
+      return;
+    }
+
     if (isWrongNetwork && switchChainAsync) {
       try {
         await switchChainAsync({ chainId: sepolia.id });
@@ -104,7 +111,7 @@ export function FacetStudio() {
       toast.loading("Minting tokens via Dispatcher (waiting for block confirmation)...", {
         id: "facet-action",
       });
-      const amountWei = parseUnits(mintAmount || "100", 18);
+      const amountWei = parseUnits(mintAmount, 18);
       const calldata = FunctionSelectorSDK.encodeCalldata(
         "0x40c10f19", // mint(address,uint256)
         ["address", "uint256"],
@@ -116,6 +123,7 @@ export function FacetStudio() {
       toast.success(`Successfully minted ${mintAmount} TEST tokens!`, {
         id: "facet-action",
       });
+      setMintAmount("");
       await fetchTokenState();
     } catch (err: any) {
       toast.error(err.message || "Minting failed", { id: "facet-action" });
@@ -125,9 +133,15 @@ export function FacetStudio() {
   // Handle Token Transfer
   const handleTransfer = async () => {
     if (!isAddress(transferTo)) {
-      toast.error("Invalid recipient address");
+      toast.error("Please enter a valid recipient address (0x...)");
       return;
     }
+    const parsedAmount = Number(transferAmount);
+    if (!transferAmount || isNaN(parsedAmount) || parsedAmount <= 0) {
+      toast.error("Please enter a valid positive transfer amount");
+      return;
+    }
+
     if (isWrongNetwork && switchChainAsync) {
       try {
         await switchChainAsync({ chainId: sepolia.id });
@@ -141,7 +155,7 @@ export function FacetStudio() {
       toast.loading("Transferring via Dispatcher (waiting for block confirmation)...", {
         id: "facet-action",
       });
-      const amountWei = parseUnits(transferAmount || "0", 18);
+      const amountWei = parseUnits(transferAmount, 18);
       const calldata = FunctionSelectorSDK.encodeCalldata(
         "0xa9059cbb", // transfer(address,uint256)
         ["address", "uint256"],
@@ -150,8 +164,9 @@ export function FacetStudio() {
 
       const txHash = await executeCalldata(calldata, 0n);
       setLastTxHash(txHash || null);
-      toast.success(`Transferred ${transferAmount} TEST tokens!`, { id: "facet-action" });
+      toast.success(`Successfully transferred ${transferAmount} TEST tokens!`, { id: "facet-action" });
       setTransferTo("");
+      setTransferAmount("");
       await fetchTokenState();
     } catch (err: any) {
       toast.error(err.message || "Transfer failed", { id: "facet-action" });
@@ -160,6 +175,11 @@ export function FacetStudio() {
 
   // Handle Calculator Simulation & Execution
   const handleSimulateCalc = async () => {
+    if (!calcA.trim() || !calcB.trim()) {
+      toast.error("Please fill in both Input A and Input B");
+      return;
+    }
+
     setIsSimulatingCalc(true);
     setCalcResult(null);
 
@@ -175,7 +195,7 @@ export function FacetStudio() {
       const calldata = FunctionSelectorSDK.encodeCalldata(
         sel,
         ["uint256", "uint256"],
-        [BigInt(calcA || 0), BigInt(calcB || 1)]
+        [BigInt(calcA.trim()), BigInt(calcB.trim())]
       );
 
       const simRes = await sepoliaPublicClient.call({
@@ -228,17 +248,17 @@ export function FacetStudio() {
             Live Facet Execution Studio
           </h3>
           <p className="text-xs text-text-secondary mt-0.5">
-            Interact with deployed smart contract facets routed dynamically through the Dispatcher on Sepolia.
+            Execute real on-chain smart contract facets routed dynamically through the Dispatcher on Sepolia.
           </p>
         </div>
 
         {/* Facet Switcher Tabs */}
-        <div className="flex bg-bg border border-border p-1 rounded-lg">
+        <div className="flex bg-card border border-border p-1 rounded-xl shadow-sm">
           <button
             onClick={() => setActiveFacet("token")}
-            className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-md transition ${
+            className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition ${
               activeFacet === "token"
-                ? "bg-card text-accent shadow-sm border border-border"
+                ? "bg-accent text-white shadow-glow-sm"
                 : "text-text-secondary hover:text-text"
             }`}
           >
@@ -247,9 +267,9 @@ export function FacetStudio() {
           </button>
           <button
             onClick={() => setActiveFacet("calc")}
-            className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-md transition ${
+            className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition ${
               activeFacet === "calc"
-                ? "bg-card text-accent shadow-sm border border-border"
+                ? "bg-accent text-white shadow-glow-sm"
                 : "text-text-secondary hover:text-text"
             }`}
           >
@@ -263,7 +283,7 @@ export function FacetStudio() {
       {activeFacet === "token" && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Card 1: Live State & Faucet */}
-          <div className="bg-card border border-border rounded-xl p-5 space-y-5">
+          <div className="bg-card border border-border rounded-xl p-5 space-y-5 shadow-card">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-text uppercase tracking-wider">
                 Facet State (Sepolia)
@@ -271,15 +291,15 @@ export function FacetStudio() {
               <button
                 onClick={fetchTokenState}
                 disabled={isLoadingToken}
-                className="text-text-secondary hover:text-accent p-1 transition"
+                className="text-text-secondary hover:text-accent p-1.5 rounded-lg hover:bg-bg transition"
                 title="Refresh balances"
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${isLoadingToken ? "animate-spin" : ""}`} />
+                <RefreshCw className={`w-3.5 h-3.5 ${isLoadingToken ? "animate-spin text-accent" : ""}`} />
               </button>
             </div>
 
             <div className="space-y-3">
-              <div className="bg-bg border border-border rounded-lg p-3.5">
+              <div className="bg-bg/80 border border-border rounded-lg p-3.5">
                 <span className="text-xs text-text-muted">Your Wallet Balance</span>
                 <div className="flex items-baseline gap-2 mt-1">
                   <span className="font-mono text-2xl font-bold text-accent">
@@ -292,7 +312,7 @@ export function FacetStudio() {
                 </span>
               </div>
 
-              <div className="bg-bg border border-border rounded-lg p-3.5">
+              <div className="bg-bg/80 border border-border rounded-lg p-3.5">
                 <span className="text-xs text-text-muted">Total Circulating Supply</span>
                 <div className="flex items-baseline gap-2 mt-1">
                   <span className="font-mono text-base font-semibold text-text">
@@ -307,26 +327,26 @@ export function FacetStudio() {
             </div>
 
             {/* Test Faucet */}
-            <div className="pt-2 border-t border-border space-y-2">
+            <div className="pt-3 border-t border-border space-y-2">
               <span className="text-xs font-medium text-text">Instant Test Faucet</span>
               <div className="flex gap-2">
                 <input
-                  type="number"
+                  type="text"
                   value={mintAmount}
                   onChange={(e) => setMintAmount(e.target.value)}
-                  placeholder="Amount"
-                  className="w-24 bg-bg border border-border rounded px-3 py-1.5 text-xs font-mono text-text"
+                  placeholder="e.g. 100"
+                  className="w-28 bg-bg border border-border rounded-lg px-3 py-2 text-xs font-mono text-text placeholder:text-text-muted focus:outline-none focus:border-accent"
                 />
                 <button
                   onClick={handleMint}
-                  disabled={isExecuting || !isConnected}
-                  className="flex-1 text-xs font-semibold text-white bg-accent hover:bg-accent-hover py-2 rounded-lg transition disabled:opacity-40"
+                  disabled={isExecuting || !isConnected || !mintAmount}
+                  className="flex-1 text-xs font-semibold text-white bg-accent hover:bg-accent-hover py-2 rounded-lg transition disabled:opacity-40 shadow-glow-sm"
                 >
-                  {isExecuting ? "Minting & Mining..." : "Mint Test Tokens"}
+                  {isExecuting ? "Minting..." : "Mint Test Tokens"}
                 </button>
               </div>
               {!isConnected && (
-                <p className="text-[11px] text-text-muted text-center">
+                <p className="text-[11px] text-text-muted text-center pt-1">
                   Connect wallet on Sepolia to mint
                 </p>
               )}
@@ -334,13 +354,13 @@ export function FacetStudio() {
           </div>
 
           {/* Card 2: Transfer Module */}
-          <div className="lg:col-span-2 bg-card border border-border rounded-xl p-5 space-y-5 flex flex-col justify-between">
+          <div className="lg:col-span-2 bg-card border border-border rounded-xl p-5 space-y-5 flex flex-col justify-between shadow-card">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-text uppercase tracking-wider">
                   Execute Transfer via Router
                 </span>
-                <span className="text-[11px] font-mono text-accent bg-accent/10 px-2 py-0.5 rounded border border-accent/20">
+                <span className="text-[11px] font-mono text-accent bg-accent/10 px-2.5 py-1 rounded-md border border-accent/20">
                   transfer(address,uint256) · 0xa9059cbb
                 </span>
               </div>
@@ -355,7 +375,7 @@ export function FacetStudio() {
                     placeholder="0xRecipientAddress..."
                     value={transferTo}
                     onChange={(e) => setTransferTo(e.target.value)}
-                    className="w-full bg-bg border border-border rounded px-3 py-2 text-xs font-mono text-text placeholder:text-text-muted focus:outline-none focus:border-accent"
+                    className="w-full bg-bg border border-border rounded-lg px-3.5 py-2.5 text-xs font-mono text-text placeholder:text-text-muted focus:outline-none focus:border-accent"
                   />
                 </div>
 
@@ -365,10 +385,10 @@ export function FacetStudio() {
                   </label>
                   <input
                     type="text"
-                    placeholder="10"
+                    placeholder="0.0"
                     value={transferAmount}
                     onChange={(e) => setTransferAmount(e.target.value)}
-                    className="w-full bg-bg border border-border rounded px-3 py-2 text-xs font-mono text-text placeholder:text-text-muted focus:outline-none focus:border-accent"
+                    className="w-full bg-bg border border-border rounded-lg px-3.5 py-2.5 text-xs font-mono text-text placeholder:text-text-muted focus:outline-none focus:border-accent"
                   />
                 </div>
               </div>
@@ -377,7 +397,7 @@ export function FacetStudio() {
             <div className="space-y-3 pt-4 border-t border-border">
               {lastTxHash && (
                 <div className="bg-bg border border-border rounded-lg p-2.5 flex items-center justify-between text-xs font-mono text-text-secondary">
-                  <span>Last Confirmed Tx:</span>
+                  <span>Last Confirmed Transaction:</span>
                   <a
                     href={`https://sepolia.etherscan.io/tx/${lastTxHash}`}
                     target="_blank"
@@ -400,8 +420,8 @@ export function FacetStudio() {
 
                 <button
                   onClick={handleTransfer}
-                  disabled={isExecuting || !transferTo || !isConnected}
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 text-xs font-semibold text-white bg-accent hover:bg-accent-hover px-5 py-2.5 rounded-lg transition disabled:opacity-40"
+                  disabled={isExecuting || !transferTo || !transferAmount || !isConnected}
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 text-xs font-semibold text-white bg-accent hover:bg-accent-hover px-6 py-2.5 rounded-lg transition disabled:opacity-40 shadow-glow-sm"
                 >
                   <Send className="w-3.5 h-3.5" />
                   <span>{isExecuting ? "Executing..." : "Send Transfer"}</span>
@@ -414,7 +434,7 @@ export function FacetStudio() {
 
       {/* ================= CALCULATOR FACET WORKSPACE ================= */}
       {activeFacet === "calc" && (
-        <div className="bg-card border border-border rounded-xl p-6 space-y-6">
+        <div className="bg-card border border-border rounded-xl p-6 space-y-6 shadow-card">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-4">
             <div>
               <span className="text-xs font-semibold text-text uppercase tracking-wider">
@@ -424,7 +444,7 @@ export function FacetStudio() {
                 Executes arithmetic operations on Sepolia via stateless Pure functions delegated by the Dispatcher.
               </p>
             </div>
-            <span className="text-xs font-mono text-accent bg-accent/10 px-2.5 py-1 rounded border border-accent/20">
+            <span className="text-xs font-mono text-accent bg-accent/10 px-2.5 py-1 rounded-md border border-accent/20">
               Contract: MockCalc.sol
             </span>
           </div>
@@ -436,10 +456,11 @@ export function FacetStudio() {
                 Input A (uint256)
               </label>
               <input
-                type="number"
+                type="text"
                 value={calcA}
+                placeholder="e.g. 42"
                 onChange={(e) => setCalcA(e.target.value)}
-                className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm font-mono text-text focus:outline-none focus:border-accent"
+                className="w-full bg-bg border border-border rounded-lg px-3.5 py-2.5 text-sm font-mono text-text placeholder:text-text-muted focus:outline-none focus:border-accent"
               />
             </div>
 
@@ -451,7 +472,7 @@ export function FacetStudio() {
               <select
                 value={calcOp}
                 onChange={(e) => setCalcOp(e.target.value as any)}
-                className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm font-mono text-text focus:outline-none focus:border-accent"
+                className="w-full bg-bg border border-border rounded-lg px-3.5 py-2.5 text-sm font-mono text-text focus:outline-none focus:border-accent"
               >
                 <option value="add">+ Add (0x771602f7)</option>
                 <option value="sub">- Subtract (0xb67d77c5)</option>
@@ -467,18 +488,19 @@ export function FacetStudio() {
                 Input B (uint256)
               </label>
               <input
-                type="number"
+                type="text"
                 value={calcB}
+                placeholder="e.g. 18"
                 onChange={(e) => setCalcB(e.target.value)}
-                className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm font-mono text-text focus:outline-none focus:border-accent"
+                className="w-full bg-bg border border-border rounded-lg px-3.5 py-2.5 text-sm font-mono text-text placeholder:text-text-muted focus:outline-none focus:border-accent"
               />
             </div>
           </div>
 
           {/* Action & Result */}
-          <div className="bg-bg border border-border rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="bg-bg border border-border rounded-xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <span className="text-xs text-text-muted">On-chain Result:</span>
+              <span className="text-xs text-text-muted font-medium">On-chain Result:</span>
               <span className="font-mono text-2xl font-bold text-accent">
                 {calcResult !== null ? calcResult : "--"}
               </span>
@@ -487,8 +509,8 @@ export function FacetStudio() {
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <button
                 onClick={handleSimulateCalc}
-                disabled={isSimulatingCalc}
-                className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 text-xs font-semibold text-white bg-accent hover:bg-accent-hover px-5 py-2.5 rounded-lg transition disabled:opacity-40"
+                disabled={isSimulatingCalc || !calcA.trim() || !calcB.trim()}
+                className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 text-xs font-semibold text-white bg-accent hover:bg-accent-hover px-6 py-3 rounded-lg transition disabled:opacity-40 shadow-glow-sm"
               >
                 <Calculator className="w-3.5 h-3.5" />
                 <span>{isSimulatingCalc ? "Calculating..." : "Calculate On-Chain (eth_call)"}</span>

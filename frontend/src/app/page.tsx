@@ -46,7 +46,7 @@ export default function Page() {
   } = useRegistry();
 
   return (
-    <div className="min-h-screen flex flex-col bg-bg text-text">
+    <div className="min-h-screen flex flex-col bg-bg text-text selection:bg-accent/30 selection:text-white">
       <Navbar isOwner={isOwner} />
 
       <main className="max-w-6xl w-full mx-auto px-6 py-8 flex-1 space-y-8">
@@ -54,8 +54,8 @@ export default function Page() {
         <ArchitectureHero />
 
         {/* Navigation Tabs */}
-        <div className="border-b border-border">
-          <div className="flex gap-2 overflow-x-auto pb-px">
+        <div className="border-b border-border/80">
+          <div className="flex gap-1.5 overflow-x-auto pb-px">
             {TABS.map((t) => {
               const Icon = t.icon;
               const isActive = tab === t.id;
@@ -63,19 +63,19 @@ export default function Page() {
                 <button
                   key={t.id}
                   onClick={() => setTab(t.id)}
-                  className={`flex items-center gap-2 px-4 py-3 text-xs font-semibold whitespace-nowrap transition border-b-2 -mb-px ${
+                  className={`flex items-center gap-2 px-4 py-3 text-xs font-semibold whitespace-nowrap transition border-b-2 -mb-px rounded-t-xl ${
                     isActive
-                      ? "text-accent border-accent bg-accent/5 rounded-t-lg"
-                      : "text-text-secondary hover:text-text border-transparent hover:border-border"
+                      ? "text-accent border-accent bg-accent/5 shadow-sm"
+                      : "text-text-secondary hover:text-text border-transparent hover:border-border hover:bg-card/40"
                   }`}
                 >
                   <Icon className={`w-4 h-4 ${isActive ? "text-accent" : "text-text-muted"}`} />
                   <span>{t.label}</span>
                   {"badge" in t && t.badge && (
                     <span
-                      className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                      className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md ${
                         isActive
-                          ? "bg-accent text-white"
+                          ? "bg-accent text-white shadow-glow-sm"
                           : "bg-tag-bg text-text-muted border border-border"
                       }`}
                     >
@@ -117,7 +117,7 @@ export default function Page() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border py-8 text-center text-xs text-text-muted bg-card/30">
+      <footer className="border-t border-border/80 py-8 text-center text-xs text-text-muted bg-card/20">
         <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <span className="font-semibold text-text">RouteX Protocol</span>
