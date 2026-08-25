@@ -5,8 +5,7 @@ import {
   parseAbiParameters,
   decodeErrorResult,
   toFunctionSelector,
-  keccak256,
-  stringToBytes,
+  formatUnits,
 } from "viem";
 import { FunctionDispatcherAbi, FunctionRegistryAbi, MockCalcAbi, MockTokenAbi } from "../config/abis";
 import { PRESET_FUNCTIONS, CONTRACT_ADDRESSES } from "../config/contracts";
@@ -86,7 +85,6 @@ export class FunctionSelectorSDK {
     );
 
     const chunks: CalldataChunk[] = [];
-    // 32-byte chunks = 64 hex characters
     for (let i = 0; i < argsHex.length; i += 64) {
       const chunkHex = argsHex.slice(i, i + 64);
       const offset = 4 + i / 2;
@@ -156,20 +154,63 @@ export class FunctionSelectorSDK {
   }
 
   /**
-   * Decodes custom EVM errors returned by Dispatcher, Registry, or Facets.
+   * Extracts raw revert hex data from nested Viem/RPC errors.
+   */
+  private static extractErrorHex(err: any): Hex | null {
+    if (!err) return null;
+    if (typeof err.data === "string" && err.data.startsWith("0x")) return err.data as Hex;
+    if (typeof err.error?.data === "string" && err.error.data.startsWith("0x")) return err.error.data as Hex;
+    if (typeof err.cause?.data === "string" && err.cause.data.startsWith("0x")) return err.cause.data as Hex;
+    if (typeof err.cause?.cause?.data === "string" && err.cause.cause.data.startsWith("0x")) return err.cause.cause.data as Hex;
+
+    // Search inside err.details / err.message for hex patterns
+    const msg = err.message || "";
+    const hexMatch = msg.match(/0x[a-fA-F0-9]{8,}/);
+    if (hexMatch) return hexMatch[0] as Hex;
+
+    return null;
+  }
+
+  /**
+   * Decodes custom EVM errors returned by Dispatcher, Registry, or Facets into human-readable text.
    */
   static decodeCustomError(err: any): string {
-    const errorData = err?.data || err?.error?.data || err?.cause?.data;
+    const errorData = this.extractErrorHex(err);
+
     if (errorData) {
       const knownAbis = [FunctionDispatcherAbi, FunctionRegistryAbi, MockCalcAbi, MockTokenAbi];
       for (const abi of knownAbis) {
         try {
           const decoded = decodeErrorResult({ abi, data: errorData });
-          return `Revert: ${decoded.errorName}(${decoded.args ? JSON.stringify(decoded.args) : ""})`;
+          if (decoded.errorName === "InsufficientBalance") {
+            const args: any = decoded.args || [];
+            const balanceFormatted = formatUnits(args[1] || 0n, 18);
+            const requestedFormatted = formatUnits(args[2] || 0n, 18);
+            return `Saldo Tidak Cukup: Saldo Anda ${balanceFormatted} TEST, tetapi Anda mencoba mengirim ${requestedFormatted} TEST.`;
+          }
+          if (decoded.errorName === "InvalidAddress") {
+            return "Alamat Penerima Tidak Valid (tidak boleh address 0x0).";
+          }
+          if (decoded.errorName === "DivisionByZero") {
+            return "Pembagian / Modulo dengan angka nol tidak diperbolehkan (Division By Zero).";
+          }
+          if (decoded.errorName === "CalldataTooShort") {
+            return "Calldata Terlalu Pendek (minimal 4 bytes function selector).";
+          }
+          if (decoded.errorName === "UnknownSelector") {
+            return `Function Selector ${(decoded.args as any)?.[0] || ""} belum terdaftar di FunctionRegistry.`;
+          }
+          if (decoded.errorName === "Unauthorized") {
+            return "Akses Ditolak: Hanya Owner kontrak yang memiliki hak akses.";
+          }
+          return `Reverted: ${decoded.errorName}(${decoded.args ? JSON.stringify(decoded.args) : ""})`;
         } catch {}
       }
     }
-    return err?.shortMessage || err?.message || "Execution reverted";
+
+    if (err?.shortMessage) return err.shortMessage;
+    if (err?.message) return err.message;
+    return "Execution reverted on-chain.";
   }
 
   /**

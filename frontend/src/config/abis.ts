@@ -95,6 +95,26 @@ export const FunctionRegistryAbi = [
       { name: "oldImplementation", type: "address", indexed: true, internalType: "address" }
     ],
     anonymous: false
+  },
+  {
+    type: "error",
+    name: "SelectorAlreadyRegistered",
+    inputs: [{ name: "selector", type: "bytes4", internalType: "bytes4" }]
+  },
+  {
+    type: "error",
+    name: "SelectorNotRegistered",
+    inputs: [{ name: "selector", type: "bytes4", internalType: "bytes4" }]
+  },
+  {
+    type: "error",
+    name: "ZeroImplementation",
+    inputs: []
+  },
+  {
+    type: "error",
+    name: "Unauthorized",
+    inputs: [{ name: "caller", type: "address", internalType: "address" }]
   }
 ] as const;
 
@@ -186,6 +206,11 @@ export const MockCalcAbi = [
     ],
     outputs: [{ name: "result", type: "uint256", internalType: "uint256" }],
     stateMutability: "pure"
+  },
+  {
+    type: "error",
+    name: "DivisionByZero",
+    inputs: []
   }
 ] as const;
 
@@ -223,5 +248,19 @@ export const MockTokenAbi = [
     inputs: [],
     outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
     stateMutability: "view"
+  },
+  {
+    type: "error",
+    name: "InsufficientBalance",
+    inputs: [
+      { name: "from", type: "address", internalType: "address" },
+      { name: "balance", type: "uint256", internalType: "uint256" },
+      { name: "requested", type: "uint256", internalType: "uint256" }
+    ]
+  },
+  {
+    type: "error",
+    name: "InvalidAddress",
+    inputs: []
   }
 ] as const;
