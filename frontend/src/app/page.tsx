@@ -22,13 +22,13 @@ import {
 } from "lucide-react";
 
 const TABS = [
-  { id: "Studio", label: "Facet Studio", icon: Sparkles, badge: "Live DApp" },
-  { id: "Routes", label: "Routes Registry", icon: Layers },
-  { id: "Dispatcher", label: "Dispatcher Gateway", icon: Send },
-  { id: "Inspector", label: "Calldata Inspector", icon: Binary, badge: "EVM Trace" },
-  { id: "Auditor", label: "Security Auditor", icon: ShieldCheck },
-  { id: "SDK", label: "SDK Codegen", icon: Code2 },
-  { id: "Hasher", label: "Selector Hasher", icon: Hash },
+  { id: "Studio", label: "Facet Studio", icon: Sparkles },
+  { id: "Routes", label: "Registry", icon: Layers },
+  { id: "Dispatcher", label: "Dispatcher", icon: Send },
+  { id: "Inspector", label: "Inspector", icon: Binary },
+  { id: "Auditor", label: "Auditor", icon: ShieldCheck },
+  { id: "SDK", label: "SDK", icon: Code2 },
+  { id: "Hasher", label: "Hasher", icon: Hash },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -46,52 +46,37 @@ export default function Page() {
   } = useRegistry();
 
   return (
-    <div className="min-h-screen flex flex-col bg-bg text-text selection:bg-accent/30 selection:text-white">
+    <div className="min-h-screen flex flex-col bg-bg text-text">
       <Navbar isOwner={isOwner} />
 
-      <main className="max-w-6xl w-full mx-auto px-6 py-8 flex-1 space-y-8">
-        {/* Architecture Hero & Explainer */}
+      <main className="max-w-[1200px] w-full mx-auto px-5 py-6 flex-1 space-y-6">
         <ArchitectureHero />
 
-        {/* Navigation Tabs */}
-        <div className="border-b border-border/80">
-          <div className="flex gap-1.5 overflow-x-auto pb-px">
-            {TABS.map((t) => {
-              const Icon = t.icon;
-              const isActive = tab === t.id;
-              return (
-                <button
-                  key={t.id}
-                  onClick={() => setTab(t.id)}
-                  className={`flex items-center gap-2 px-4 py-3 text-xs font-semibold whitespace-nowrap transition border-b-2 -mb-px rounded-t-xl ${
-                    isActive
-                      ? "text-accent border-accent bg-accent/5 shadow-sm"
-                      : "text-text-secondary hover:text-text border-transparent hover:border-border hover:bg-card/40"
-                  }`}
-                >
-                  <Icon className={`w-4 h-4 ${isActive ? "text-accent" : "text-text-muted"}`} />
-                  <span>{t.label}</span>
-                  {"badge" in t && t.badge && (
-                    <span
-                      className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md ${
-                        isActive
-                          ? "bg-accent text-white shadow-glow-sm"
-                          : "bg-tag-bg text-text-muted border border-border"
-                      }`}
-                    >
-                      {t.badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        {/* Tab bar */}
+        <nav className="flex gap-0.5 border-b border-border overflow-x-auto">
+          {TABS.map((t) => {
+            const Icon = t.icon;
+            const active = tab === t.id;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={`flex items-center gap-1.5 px-3.5 py-2.5 text-xs font-medium whitespace-nowrap border-b-2 -mb-px interactive ${
+                  active
+                    ? "text-accent border-accent"
+                    : "text-text-muted hover:text-text-secondary border-transparent"
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                <span>{t.label}</span>
+              </button>
+            );
+          })}
+        </nav>
 
-        {/* Tab Content Panel */}
-        <div className="pt-2 animate-in fade-in duration-200">
+        {/* Content */}
+        <div className="animate-fade-in">
           {tab === "Studio" && <FacetStudio />}
-
           {tab === "Routes" && (
             <RoutingTable
               routes={routes}
@@ -103,30 +88,18 @@ export default function Page() {
               onRemove={removeSelector}
             />
           )}
-
           {tab === "Dispatcher" && <DispatcherPanel />}
-
           {tab === "Inspector" && <CalldataInspector />}
-
           {tab === "Auditor" && <SecurityAuditor routes={routes} />}
-
           {tab === "SDK" && <SdkGenerator routes={routes} />}
-
           {tab === "Hasher" && <SelectorHasher />}
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-border/80 py-8 text-center text-xs text-text-muted bg-card/20">
-        <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-text">RouteX Protocol</span>
-            <span>·</span>
-            <span>EVM Dynamic Selector Routing Standard</span>
-          </div>
-          <div className="font-mono text-[11px] text-text-secondary">
-            Solidity ^0.8.24 · Foundry Tested · Viem & Wagmi v2
-          </div>
+      <footer className="border-t border-border py-5">
+        <div className="max-w-[1200px] mx-auto px-5 flex items-center justify-between text-[11px] text-text-muted">
+          <span>RouteX Protocol · EVM Dynamic Routing</span>
+          <span className="font-mono">Solidity ^0.8.24 · Viem · Wagmi v2</span>
         </div>
       </footer>
     </div>

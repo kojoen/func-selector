@@ -33,7 +33,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
-      <body className="font-sans min-h-screen antialiased bg-bg text-text selection:bg-accent/30 selection:text-white">
+      <body className="font-sans min-h-screen antialiased bg-bg text-text">
         <Providers>
           {children}
           <Toaster position="bottom-right" richColors theme="dark" />

@@ -4,7 +4,7 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { CONTRACT_ADDRESSES } from "../config/contracts";
 import { formatAddress } from "../lib/utils";
 import { useState } from "react";
-import { Copy, Check, ShieldCheck, Cpu } from "lucide-react";
+import { Copy, Check, ShieldCheck } from "lucide-react";
 
 export function Navbar({ isOwner }: { isOwner: boolean }) {
   const [copied, setCopied] = useState<string | null>(null);
@@ -12,80 +12,59 @@ export function Navbar({ isOwner }: { isOwner: boolean }) {
   const copy = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
     setCopied(key);
-    setTimeout(() => setCopied(null), 1200);
+    setTimeout(() => setCopied(null), 1500);
   };
 
   return (
-    <header className="border-b border-border/80 bg-card/60 backdrop-blur-xl sticky top-0 z-40">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 h-16">
-        <div className="flex items-center gap-6">
-          {/* Logo & Brand */}
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-accent/15 border border-accent/30 flex items-center justify-center text-accent shadow-glow-sm">
-              <Cpu className="w-4 h-4" />
+    <header className="sticky top-0 z-50 border-b border-border bg-bg/80 backdrop-blur-xl backdrop-saturate-150">
+      <div className="mx-auto flex max-w-[1200px] items-center justify-between px-5 h-14">
+        {/* Left: Brand */}
+        <div className="flex items-center gap-5">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-accent/12 border border-accent/25 flex items-center justify-center">
+              <span className="text-accent text-sm font-bold">R</span>
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-base font-bold tracking-tight text-text">
-                  RouteX
-                </span>
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-accent bg-accent/10 px-1.5 py-0.5 rounded-md border border-accent/20">
-                  Protocol
-                </span>
-              </div>
-            </div>
+            <span className="text-sm font-semibold tracking-tight text-text">RouteX</span>
+            <span className="hidden sm:inline text-[10px] font-medium text-accent/80 bg-accent-soft border border-accent/15 px-1.5 py-px rounded">
+              Sepolia
+            </span>
           </div>
 
-          {/* Contract address badges */}
-          <div className="hidden lg:flex items-center gap-2">
+          {/* Contract chips */}
+          <div className="hidden lg:flex items-center gap-1.5">
             <button
               onClick={() => copy(CONTRACT_ADDRESSES.dispatcher, "dis")}
-              title="Click to copy Dispatcher Contract Address"
-              className="group flex items-center gap-1.5 font-mono text-[11px] text-text-secondary hover:text-text bg-bg border border-border hover:border-accent/40 px-3 py-1.5 rounded-lg transition"
+              className="group flex items-center gap-1.5 font-mono text-[11px] text-text-muted hover:text-text-secondary bg-surface border border-border hover:border-border-hover px-2 py-1 rounded-md interactive"
             >
-              <span className="text-accent font-semibold">Dispatcher:</span>
+              <span className="text-accent/70">Router</span>
               <span>{formatAddress(CONTRACT_ADDRESSES.dispatcher, 4)}</span>
-              {copied === "dis" ? (
-                <Check className="w-3 h-3 text-ok" />
-              ) : (
-                <Copy className="w-3 h-3 text-text-muted group-hover:text-accent transition" />
-              )}
+              {copied === "dis" ? <Check className="w-3 h-3 text-ok" /> : <Copy className="w-3 h-3 opacity-0 group-hover:opacity-100 interactive" />}
             </button>
 
             <button
               onClick={() => copy(CONTRACT_ADDRESSES.registry, "reg")}
-              title="Click to copy Registry Contract Address"
-              className="group flex items-center gap-1.5 font-mono text-[11px] text-text-secondary hover:text-text bg-bg border border-border hover:border-accent/40 px-3 py-1.5 rounded-lg transition"
+              className="group flex items-center gap-1.5 font-mono text-[11px] text-text-muted hover:text-text-secondary bg-surface border border-border hover:border-border-hover px-2 py-1 rounded-md interactive"
             >
-              <span className="text-text-muted">Registry:</span>
+              <span className="text-text-muted">Registry</span>
               <span>{formatAddress(CONTRACT_ADDRESSES.registry, 4)}</span>
-              {copied === "reg" ? (
-                <Check className="w-3 h-3 text-ok" />
-              ) : (
-                <Copy className="w-3 h-3 text-text-muted group-hover:text-text transition" />
-              )}
+              {copied === "reg" ? <Check className="w-3 h-3 text-ok" /> : <Copy className="w-3 h-3 opacity-0 group-hover:opacity-100 interactive" />}
             </button>
 
             {isOwner && (
-              <span className="flex items-center gap-1 text-[11px] font-medium text-accent bg-accent/10 border border-accent/30 px-2.5 py-1 rounded-md">
+              <span className="flex items-center gap-1 text-[10px] font-medium text-accent bg-accent-soft border border-accent/20 px-2 py-0.5 rounded">
                 <ShieldCheck className="w-3 h-3" />
-                Admin
+                Owner
               </span>
             )}
           </div>
         </div>
 
-        {/* Connect Button */}
-        <div className="flex items-center gap-3">
-          <ConnectButton
-            accountStatus={{
-              smallScreen: "avatar",
-              largeScreen: "full",
-            }}
-            chainStatus="icon"
-            showBalance={false}
-          />
-        </div>
+        {/* Right: Connect */}
+        <ConnectButton
+          accountStatus={{ smallScreen: "avatar", largeScreen: "full" }}
+          chainStatus="icon"
+          showBalance={false}
+        />
       </div>
     </header>
   );

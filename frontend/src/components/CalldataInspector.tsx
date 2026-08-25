@@ -6,7 +6,7 @@ import { FunctionSelectorSDK, type DisassembledCalldata } from "../lib/sdk";
 import { sepoliaPublicClient } from "../hooks/useDispatcher";
 import { toast } from "sonner";
 import { type Hex } from "viem";
-import { Binary, Play, Copy, Check, ShieldAlert, Sparkles } from "lucide-react";
+import { Play, Copy, Check } from "lucide-react";
 
 export function CalldataInspector() {
   const [rawInput, setRawInput] = useState<string>("");
@@ -22,37 +22,27 @@ export function CalldataInspector() {
     if (!text) return;
     navigator.clipboard.writeText(text);
     setCopied(true);
-    toast.success("Copied to clipboard");
-    setTimeout(() => setCopied(false), 1200);
+    toast.success("Copied");
+    setTimeout(() => setCopied(false), 1500);
   };
 
   const handleSimulate = async () => {
-    if (!disassembled.isValid) {
-      toast.error("Please enter a valid hex calldata payload (minimum 4 bytes)");
-      return;
-    }
-
+    if (!disassembled.isValid) { toast.error("Invalid calldata"); return; }
     setIsSimulating(true);
     setSimulationResult(null);
-
     try {
-      toast.loading("Simulating via eth_call on Sepolia Dispatcher...", { id: "sim" });
       const res = await sepoliaPublicClient.call({
         to: CONTRACT_ADDRESSES.dispatcher,
         data: rawInput.trim() as Hex,
       });
-
-      if (res.data && res.data !== "0x") {
-        setSimulationResult(`Success (Return Data: ${res.data})`);
-        toast.success("Execution simulation succeeded!", { id: "sim" });
-      } else {
-        setSimulationResult("Success (Empty return / void)");
-        toast.success("Execution simulation succeeded!", { id: "sim" });
-      }
+      setSimulationResult(res.data && res.data !== "0x"
+        ? "Success · Return: " + res.data
+        : "Success · void return");
+      toast.success("Simulation succeeded");
     } catch (err: any) {
       const decoded = FunctionSelectorSDK.decodeCustomError(err);
-      setSimulationResult(`Reverted: ${decoded}`);
-      toast.error(`Reverted: ${decoded}`, { id: "sim" });
+      setSimulationResult("Reverted: " + decoded);
+      toast.error("Reverted: " + decoded);
     } finally {
       setIsSimulating(false);
     }
@@ -61,176 +51,115 @@ export function CalldataInspector() {
   const loadPreset = (selector: string) => {
     const preset = PRESET_FUNCTIONS.find((p) => p.selector === selector);
     if (!preset) return;
-
     if (preset.name === "transfer") {
-      setRawInput(
-        "0xa9059cbb00000000000000000000000054254040faf67f85e96617d3ec600248c4b3ad370000000000000000000000000000000000000000000000056bc75e2d63100000"
-      );
+      setRawInput("0xa9059cbb00000000000000000000000054254040faf67f85e96617d3ec600248c4b3ad370000000000000000000000000000000000000000000000056bc75e2d63100000");
     } else if (preset.name === "add") {
-      setRawInput(
-        "0x771602f7000000000000000000000000000000000000000000000000000000000000002a0000000000000000000000000000000000000000000000000000000000000012"
-      );
+      setRawInput("0x771602f7000000000000000000000000000000000000000000000000000000000000002a0000000000000000000000000000000000000000000000000000000000000012");
     } else {
       setRawInput(preset.selector);
     }
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h3 className="text-base font-bold text-text flex items-center gap-2">
-            <Binary className="w-4 h-4 text-accent" />
-            EVM Calldata Disassembler & Simulation Studio
-          </h3>
-          <p className="text-xs text-text-secondary mt-0.5">
-            Inspect raw byte-level transaction calldata, slice 32-byte parameter words, and simulate execution via <code className="text-accent font-mono bg-bg px-1.5 py-0.5 rounded border border-border">eth_call</code> on Sepolia.
-          </p>
-        </div>
-
-        {/* Quick presets */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-text-muted">Load Preset:</span>
-          <button
-            onClick={() => loadPreset("0xa9059cbb")}
-            className="text-xs font-mono text-text-secondary hover:text-text bg-bg border border-border hover:border-accent/40 px-2.5 py-1 rounded-md transition"
-          >
-            transfer()
-          </button>
-          <button
-            onClick={() => loadPreset("0x771602f7")}
-            className="text-xs font-mono text-text-secondary hover:text-text bg-bg border border-border hover:border-accent/40 px-2.5 py-1 rounded-md transition"
-          >
-            add()
-          </button>
-        </div>
-      </div>
-
-      {/* Input Box */}
-      <div className="bg-card border border-border rounded-xl p-6 space-y-4 shadow-card">
-        <div>
-          <label className="block text-xs font-medium text-text-secondary mb-1.5">
-            Raw Hex Calldata (msg.data)
-          </label>
-          <textarea
-            rows={3}
-            value={rawInput}
-            onChange={(e) => setRawInput(e.target.value)}
-            placeholder="Paste 0x... calldata or select a preset above"
-            className="w-full bg-bg border border-border rounded-lg p-3.5 text-xs font-mono text-text placeholder:text-text-muted focus:outline-none focus:border-accent"
-          />
-        </div>
-
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-3 text-xs text-text-muted">
-            <span>
-              Total Length: <strong className="text-text font-mono">{disassembled.totalBytes} bytes</strong>
-            </span>
-            <span>·</span>
-            <span>
-              Words: <strong className="text-text font-mono">{disassembled.chunks.length} parameters</strong>
-            </span>
+    <div className="space-y-5">
+      <div className="bg-surface border border-border rounded-2xl p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] font-medium text-text-secondary uppercase tracking-wider">
+            Calldata Disassembler
+          </span>
+          <div className="flex gap-1.5">
+            {["0xa9059cbb", "0x771602f7"].map((sel) => (
+              <button
+                key={sel}
+                onClick={() => loadPreset(sel)}
+                className="text-[10px] font-mono text-text-muted hover:text-text-secondary bg-bg-raised border border-border px-2 py-0.5 rounded interactive"
+              >
+                {PRESET_FUNCTIONS.find((p) => p.selector === sel)?.name || sel}()
+              </button>
+            ))}
           </div>
+        </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
+        <textarea
+          rows={3}
+          value={rawInput}
+          onChange={(e) => setRawInput(e.target.value)}
+          placeholder="Paste 0x... calldata"
+          className="w-full bg-bg-raised border border-border rounded-lg p-3.5 text-xs font-mono text-text placeholder:text-text-muted focus:outline-none focus:border-accent/50 interactive"
+        />
+
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] text-text-muted font-mono">
+            {disassembled.totalBytes} bytes · {disassembled.chunks.length} words
+          </span>
+          <div className="flex gap-2">
             <button
               onClick={() => handleCopy(rawInput)}
               disabled={!rawInput}
-              className="flex items-center gap-1.5 text-xs text-text-secondary hover:text-text bg-bg border border-border px-3.5 py-2 rounded-lg transition disabled:opacity-30"
+              className="flex items-center gap-1 text-[11px] text-text-muted hover:text-text-secondary bg-bg-raised border border-border px-2.5 py-1.5 rounded-lg interactive disabled:opacity-20"
             >
-              {copied ? <Check className="w-3.5 h-3.5 text-ok" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>Copy</span>
+              {copied ? <Check className="w-3 h-3 text-ok" /> : <Copy className="w-3 h-3" />}
+              Copy
             </button>
             <button
               onClick={handleSimulate}
               disabled={isSimulating || !disassembled.isValid}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 text-xs font-semibold text-white bg-accent hover:bg-accent-hover px-5 py-2.5 rounded-lg transition disabled:opacity-40 shadow-glow-sm"
+              className="flex items-center gap-1 text-[11px] font-medium text-text-inverse bg-accent hover:bg-accent-hover px-3.5 py-1.5 rounded-lg interactive disabled:opacity-30 shadow-glow-sm"
             >
-              <Play className="w-3.5 h-3.5" />
-              <span>{isSimulating ? "Simulating..." : "Simulate Call (eth_call)"}</span>
+              <Play className="w-3 h-3" />
+              {isSimulating ? "Running..." : "Simulate"}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Breakdown Cards */}
-      {disassembled.isValid ? (
-        <div className="space-y-4">
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-text-secondary">
-            Byte-by-Byte Memory Decomposition
-          </h4>
-
-          {/* Selector Card */}
-          <div className="bg-card border border-accent/30 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+      {/* Breakdown */}
+      {disassembled.isValid && (
+        <div className="space-y-2">
+          {/* Selector */}
+          <div className="bg-surface border border-accent/15 rounded-xl px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <span className="text-xs font-mono font-bold text-accent bg-accent/10 px-2.5 py-1 rounded-md border border-accent/20">
-                Offset [0:4]
-              </span>
-              <div>
-                <span className="text-xs text-text-muted">4-Byte Function Selector:</span>
-                <p className="font-mono text-sm font-bold text-text">{disassembled.selector}</p>
-              </div>
+              <span className="text-[10px] font-mono text-accent bg-accent-soft px-2 py-0.5 rounded">[0:4]</span>
+              <span className="font-mono text-sm font-medium text-text">{disassembled.selector}</span>
             </div>
-
             {disassembled.knownSignature && (
-              <div className="text-right">
-                <span className="text-xs text-text-muted">Resolved Signature:</span>
-                <p className="font-mono text-xs font-semibold text-accent">{disassembled.knownSignature}</p>
-              </div>
+              <span className="font-mono text-xs text-accent">{disassembled.knownSignature}</span>
             )}
           </div>
 
-          {/* Parameter Chunks */}
+          {/* Words */}
           {disassembled.chunks.map((chunk, idx) => (
-            <div
-              key={idx}
-              className="bg-card border border-border rounded-xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-sm"
-            >
+            <div key={idx} className="bg-surface border border-border rounded-xl px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div className="flex items-center gap-3">
-                <span className="text-xs font-mono text-text-muted bg-bg px-2.5 py-1 rounded-md border border-border">
-                  Offset [{chunk.offset}:{chunk.offset + 32}]
+                <span className="text-[10px] font-mono text-text-muted bg-bg-raised px-2 py-0.5 rounded shrink-0">
+                  [{chunk.offset}:{chunk.offset + 32}]
                 </span>
-                <div>
-                  <span className="text-xs font-medium text-text-secondary">
-                    Word #{idx + 1} ({chunk.typeGuess}):
-                  </span>
-                  <p className="font-mono text-xs text-text break-all mt-0.5">{chunk.hex}</p>
-                </div>
+                <span className="font-mono text-xs text-text break-all">{chunk.hex}</span>
               </div>
-
-              <div className="md:text-right text-xs text-text-muted font-mono bg-bg px-3 py-1.5 rounded-lg border border-border/60">
+              <span className="text-[11px] font-mono text-text-muted bg-bg-raised px-2 py-1 rounded shrink-0">
                 {chunk.description}
-              </div>
+              </span>
             </div>
           ))}
 
-          {/* Simulation Output Card */}
+          {/* Sim result */}
           {simulationResult && (
-            <div
-              className={`p-5 rounded-xl border font-mono text-xs ${
-                simulationResult.startsWith("Reverted")
-                  ? "bg-err/10 border-err/30 text-err"
-                  : "bg-ok/10 border-ok/30 text-ok"
-              }`}
-            >
-              <div className="flex items-center gap-2 font-semibold mb-1">
-                {simulationResult.startsWith("Reverted") ? (
-                  <ShieldAlert className="w-4 h-4" />
-                ) : (
-                  <Sparkles className="w-4 h-4" />
-                )}
-                <span>Simulation Result:</span>
-              </div>
-              <p className="break-all">{simulationResult}</p>
+            <div className={"rounded-xl px-4 py-3 font-mono text-xs break-all " + (
+              simulationResult.startsWith("Reverted")
+                ? "bg-err-muted border border-err/20 text-err"
+                : "bg-ok-muted border border-ok/20 text-ok"
+            )}>
+              {simulationResult}
             </div>
           )}
         </div>
-      ) : rawInput.trim() ? (
-        <div className="bg-err/10 border border-err/30 rounded-xl p-4 text-xs text-err font-mono">
+      )}
+
+      {rawInput.trim() && !disassembled.isValid && (
+        <div className="bg-err-muted border border-err/20 rounded-xl px-4 py-3 text-xs text-err font-mono">
           {disassembled.error}
         </div>
-      ) : null}
+      )}
     </div>
   );
 }

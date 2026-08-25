@@ -15,14 +15,7 @@ interface RegisterModalProps {
   onSuccess: () => void;
 }
 
-export function RegisterModal({
-  isOpen,
-  onClose,
-  editingItem,
-  onRegister,
-  onReplace,
-  onSuccess,
-}: RegisterModalProps) {
+export function RegisterModal({ isOpen, onClose, editingItem, onRegister, onReplace, onSuccess }: RegisterModalProps) {
   const [signature, setSignature] = useState("");
   const [implementation, setImplementation] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -44,24 +37,20 @@ export function RegisterModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isAddress(implementation)) {
-      toast.error("Please enter a valid Ethereum address (0x...)");
-      return;
-    }
-
+    if (!isAddress(implementation)) { toast.error("Invalid address"); return; }
     setSubmitting(true);
     try {
       if (isEdit) {
         await onReplace(selector as Hex, implementation as Address);
-        toast.success("Route updated successfully");
+        toast.success("Route updated");
       } else {
         await onRegister(selector as Hex, implementation as Address, signature.trim());
-        toast.success("Route registered successfully");
+        toast.success("Route registered");
       }
       onSuccess();
       onClose();
     } catch (err: any) {
-      toast.error(err.shortMessage || err.message || "Transaction failed");
+      toast.error(err.shortMessage || err.message || "Failed");
     } finally {
       setSubmitting(false);
     }
@@ -69,73 +58,57 @@ export function RegisterModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="w-full max-w-md bg-card border border-border rounded-2xl p-6 space-y-5 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+      <div className="w-full max-w-md bg-surface border border-border rounded-2xl p-6 space-y-5 shadow-float animate-fade-in">
         <div className="flex items-center justify-between">
-          <h3 className="text-base font-bold text-text">
-            {isEdit ? "Swap Implementation" : "Register New Route"}
+          <h3 className="text-sm font-semibold text-text">
+            {isEdit ? "Swap Implementation" : "Register Route"}
           </h3>
-          <button onClick={onClose} className="text-text-muted hover:text-text text-xl p-1 transition">
-            ×
-          </button>
+          <button onClick={onClose} className="text-text-muted hover:text-text text-lg interactive">×</button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-text-secondary mb-1.5">
-              Function Signature
-            </label>
+            <label className="block text-[11px] text-text-muted mb-1.5">Function Signature</label>
             <input
               type="text"
               required
               disabled={isEdit}
-              placeholder="e.g. transfer(address,uint256)"
+              placeholder="transfer(address,uint256)"
               value={signature}
               onChange={(e) => setSignature(e.target.value)}
-              className="w-full bg-bg border border-border rounded-lg px-3.5 py-2.5 text-xs font-mono text-text placeholder:text-text-muted focus:outline-none focus:border-accent disabled:opacity-50 disabled:bg-bg/50"
+              className="w-full bg-bg-raised border border-border rounded-lg px-3.5 py-2.5 text-xs font-mono text-text placeholder:text-text-muted focus:outline-none focus:border-accent/50 interactive disabled:opacity-40"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-text-secondary mb-1.5">
-              Computed 4-Byte Selector
-            </label>
-            <div className="bg-bg border border-border rounded-lg px-3.5 py-2.5 font-mono text-xs text-accent font-semibold">
+            <label className="block text-[11px] text-text-muted mb-1.5">Computed Selector</label>
+            <div className="bg-bg-raised border border-border rounded-lg px-3.5 py-2.5 font-mono text-xs text-accent font-medium">
               {selector}
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-text-secondary mb-1.5">
-              Implementation Contract Address
-            </label>
+            <label className="block text-[11px] text-text-muted mb-1.5">Implementation Address</label>
             <input
               type="text"
               required
-              placeholder="0xImplementationAddress..."
+              placeholder="0x..."
               value={implementation}
               onChange={(e) => setImplementation(e.target.value)}
-              className="w-full bg-bg border border-border rounded-lg px-3.5 py-2.5 text-xs font-mono text-text placeholder:text-text-muted focus:outline-none focus:border-accent"
+              className="w-full bg-bg-raised border border-border rounded-lg px-3.5 py-2.5 text-xs font-mono text-text placeholder:text-text-muted focus:outline-none focus:border-accent/50 interactive"
             />
           </div>
 
-          <p className="text-[11px] text-text-muted leading-relaxed">
-            The target contract will be called via <code className="text-accent font-mono">DELEGATECALL</code> in the Dispatcher&apos;s storage context.
-          </p>
-
-          <div className="flex justify-end gap-2.5 pt-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="text-xs text-text-secondary hover:text-text px-4 py-2.5 rounded-xl border border-border transition hover:bg-bg"
-            >
+          <div className="flex justify-end gap-2 pt-2">
+            <button type="button" onClick={onClose} className="text-xs text-text-muted hover:text-text px-4 py-2 rounded-lg border border-border interactive">
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting || !signature || !implementation}
-              className="text-xs font-semibold text-white bg-accent hover:bg-accent-hover px-5 py-2.5 rounded-xl transition disabled:opacity-40 shadow-glow-sm"
+              className="text-xs font-medium text-text-inverse bg-accent hover:bg-accent-hover px-4 py-2 rounded-lg interactive disabled:opacity-30 shadow-glow-sm"
             >
-              {submitting ? "Confirming..." : isEdit ? "Update Route" : "Register Route"}
+              {submitting ? "Confirming..." : isEdit ? "Update" : "Register"}
             </button>
           </div>
         </form>

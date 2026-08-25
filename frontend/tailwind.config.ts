@@ -9,39 +9,69 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        bg: "#090A0F",
-        card: "#10121A",
-        "card-hover": "#151824",
-        border: "#1C2030",
-        "border-strong": "#282E45",
-        accent: "#6366F1",
-        "accent-hover": "#4F46E5",
-        "accent-glow": "rgba(99, 102, 241, 0.15)",
-        cyan: {
-          400: "#22D3EE",
-          500: "#06B6D4",
+        bg: {
+          DEFAULT: "#0C0C0E",
+          raised: "#111114",
+        },
+        surface: {
+          DEFAULT: "#161619",
+          hover: "#1C1C20",
+          active: "#222228",
+        },
+        border: {
+          DEFAULT: "#232329",
+          hover: "#2E2E38",
+          accent: "#393945",
+        },
+        accent: {
+          DEFAULT: "#818CF8",
+          hover: "#6366F1",
+          muted: "#4338CA",
+          glow: "rgba(129, 140, 248, 0.12)",
+          soft: "rgba(129, 140, 248, 0.08)",
+        },
+        teal: {
+          DEFAULT: "#2DD4BF",
+          muted: "rgba(45, 212, 191, 0.12)",
         },
         text: {
-          DEFAULT: "#F8FAFC",
-          secondary: "#94A3B8",
-          muted: "#64748B",
+          DEFAULT: "#EDEDEF",
+          secondary: "#8A8A98",
+          muted: "#55555F",
+          inverse: "#0C0C0E",
         },
-        tag: {
-          bg: "#161926",
-          text: "#94A3B8",
-        },
-        ok: "#10B981",
-        err: "#EF4444",
-        warn: "#F59E0B",
+        ok: { DEFAULT: "#34D399", muted: "rgba(52, 211, 153, 0.12)" },
+        err: { DEFAULT: "#F87171", muted: "rgba(248, 113, 113, 0.12)" },
+        warn: { DEFAULT: "#FBBF24", muted: "rgba(251, 191, 36, 0.12)" },
       },
       fontFamily: {
         sans: ["var(--font-inter)", "system-ui", "sans-serif"],
         mono: ["var(--font-jetbrains-mono)", "Menlo", "monospace"],
       },
+      borderRadius: {
+        "2xl": "16px",
+        "3xl": "20px",
+      },
       boxShadow: {
-        glow: "0 0 20px -5px rgba(99, 102, 241, 0.25)",
-        "glow-sm": "0 0 12px -3px rgba(99, 102, 241, 0.2)",
-        card: "0 4px 20px -2px rgba(0, 0, 0, 0.5)",
+        glow: "0 0 24px -4px rgba(129, 140, 248, 0.18)",
+        "glow-sm": "0 0 12px -2px rgba(129, 140, 248, 0.14)",
+        "glow-lg": "0 0 40px -8px rgba(129, 140, 248, 0.22)",
+        float: "0 8px 32px -8px rgba(0, 0, 0, 0.5)",
+        card: "0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px -1px rgba(0, 0, 0, 0.3)",
+      },
+      animation: {
+        "fade-in": "fadeIn 0.3s ease-out",
+        "slide-up": "slideUp 0.3s ease-out",
+      },
+      keyframes: {
+        fadeIn: {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+        slideUp: {
+          "0%": { opacity: "0", transform: "translateY(8px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
       },
     },
   },

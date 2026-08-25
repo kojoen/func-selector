@@ -1,110 +1,82 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Layers, Zap, Shield, ChevronDown, ChevronUp, Terminal } from "lucide-react";
+import { Layers, Zap, Shield, ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
+
+const STEPS = [
+  { step: "01", title: "Inbound Call", desc: "Raw calldata sent to single Dispatcher address" },
+  { step: "02", title: "Selector Slice", desc: "msg.sig extracted — first 4 bytes of calldata" },
+  { step: "03", title: "Registry Lookup", desc: "Selector mapped to facet implementation address" },
+  { step: "04", title: "Delegatecall", desc: "Facet executes in Dispatcher's storage context" },
+];
 
 export function ArchitectureHero() {
-  const [showDiagram, setShowDiagram] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="border border-border rounded-2xl bg-card p-6 md:p-8 shadow-card space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-accent bg-accent/10 px-2.5 py-1 rounded-md border border-accent/20">
-              EVM Dynamic Routing Standard
-            </span>
-            <span className="text-xs text-text-muted font-mono">Solidity ^0.8.24</span>
-          </div>
-          <h2 className="text-xl md:text-2xl font-bold tracking-tight text-text">
-            Modular Function Selector & Calldata Router
-          </h2>
-          <p className="text-sm text-text-secondary mt-1.5 max-w-2xl leading-relaxed">
-            Eliminates EVM smart contract 24KB size limits (EIP-170) and enables seamless zero-downtime micro-upgrades by routing 4-byte calldata selectors to modular facet contracts via inline-assembly <code className="text-accent font-mono bg-bg px-1.5 py-0.5 rounded border border-border">delegatecall</code>.
-          </p>
+    <section className="space-y-5">
+      {/* Title row */}
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-2">
+          <h1 className="text-lg font-semibold tracking-tight text-text">
+            Modular Function Selector Router
+          </h1>
+          <span className="text-[10px] font-mono text-text-muted bg-surface border border-border px-2 py-0.5 rounded">
+            EIP-2535 Inspired
+          </span>
         </div>
-
-        <button
-          onClick={() => setShowDiagram(!showDiagram)}
-          className="self-start md:self-center flex items-center gap-2 text-xs font-semibold text-text bg-bg hover:bg-card border border-border hover:border-accent/40 px-4 py-2.5 rounded-xl transition shadow-sm"
-        >
-          <Layers className="w-4 h-4 text-accent" />
-          <span>{showDiagram ? "Hide Pipeline" : "View Routing Flow"}</span>
-          {showDiagram ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-        </button>
+        <p className="text-[13px] text-text-secondary max-w-2xl leading-relaxed">
+          Route 4-byte calldata selectors to modular facet contracts via{" "}
+          <code className="text-accent font-mono text-xs">delegatecall</code>.
+          Bypass 24KB contract limits. Enable zero-downtime upgrades.
+        </p>
       </div>
 
-      {/* 3 Core Value Pillars */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-border">
-        <div className="bg-bg/70 border border-border rounded-xl p-4 space-y-1.5">
-          <div className="flex items-center gap-2 text-xs font-semibold text-text">
-            <Zap className="w-4 h-4 text-accent" />
-            <span>Single Entrypoint Gateway</span>
+      {/* Feature cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {[
+          { icon: Zap, title: "Single Entrypoint", desc: "One immutable address for all function calls" },
+          { icon: Layers, title: "O(1) Registry", desc: "Swap-and-pop enumerable selector mapping" },
+          { icon: Shield, title: "Shared Storage", desc: "Facets execute under Dispatcher state context" },
+        ].map(({ icon: Icon, title, desc }) => (
+          <div
+            key={title}
+            className="bg-surface border border-border rounded-xl p-4 space-y-1.5 hover:border-border-hover interactive"
+          >
+            <div className="flex items-center gap-2">
+              <Icon className="w-3.5 h-3.5 text-accent" />
+              <span className="text-xs font-medium text-text">{title}</span>
+            </div>
+            <p className="text-[12px] text-text-secondary leading-relaxed">{desc}</p>
           </div>
-          <p className="text-xs text-text-secondary leading-relaxed">
-            Users & dApps interact only with the immutable Dispatcher. Calldata is sliced at runtime and delegated dynamically.
-          </p>
-        </div>
-
-        <div className="bg-bg/70 border border-border rounded-xl p-4 space-y-1.5">
-          <div className="flex items-center gap-2 text-xs font-semibold text-text">
-            <Layers className="w-4 h-4 text-accent" />
-            <span>O(1) Facet Registry</span>
-          </div>
-          <p className="text-xs text-text-secondary leading-relaxed">
-            Active selectors are stored in an enumerable registry using swap-and-pop arrays for zero-gas-leak function swapping.
-          </p>
-        </div>
-
-        <div className="bg-bg/70 border border-border rounded-xl p-4 space-y-1.5">
-          <div className="flex items-center gap-2 text-xs font-semibold text-text">
-            <Shield className="w-4 h-4 text-accent" />
-            <span>Atomic Storage Context</span>
-          </div>
-          <p className="text-xs text-text-secondary leading-relaxed">
-            All execution persists in the Dispatcher’s storage space. Facets act as pure stateless execution engines.
-          </p>
-        </div>
+        ))}
       </div>
 
-      {/* Interactive Visual Execution Pipeline */}
-      {showDiagram && (
-        <div className="bg-bg border border-border rounded-xl p-5 font-mono text-xs text-text-secondary space-y-4 animate-in fade-in duration-200">
-          <div className="flex items-center justify-between border-b border-border pb-3">
-            <span className="font-semibold text-text flex items-center gap-2">
-              <Terminal className="w-4 h-4 text-accent" />
-              Runtime EVM Calldata Pipeline
-            </span>
-            <span className="text-[11px] text-text-muted">msg.data [0:4] = bytes4 selector</span>
-          </div>
+      {/* Expandable pipeline */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center gap-2 text-xs text-text-secondary hover:text-text interactive"
+      >
+        {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+        <span>{expanded ? "Hide" : "View"} execution pipeline</span>
+      </button>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 pt-1">
-            <div className="p-3.5 bg-card border border-border rounded-lg space-y-1">
-              <span className="text-[10px] text-accent font-bold uppercase tracking-wider">Step 1: Inbound</span>
-              <p className="text-text font-semibold">User Transaction</p>
-              <p className="text-[11px] text-text-muted">Sends raw calldata + optional msg.value to Dispatcher address.</p>
+      {expanded && (
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 animate-fade-in">
+          {STEPS.map((s, i) => (
+            <div key={s.step} className="relative bg-surface border border-border rounded-xl p-4 space-y-1">
+              <span className="text-[10px] font-mono font-semibold text-accent">
+                STEP {s.step}
+              </span>
+              <p className="text-xs font-medium text-text">{s.title}</p>
+              <p className="text-[11px] text-text-muted leading-relaxed">{s.desc}</p>
+              {i < STEPS.length - 1 && (
+                <ArrowRight className="hidden sm:block absolute -right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-border-accent z-10" />
+              )}
             </div>
-
-            <div className="p-3.5 bg-card border border-border rounded-lg space-y-1">
-              <span className="text-[10px] text-accent font-bold uppercase tracking-wider">Step 2: Slice & Lookup</span>
-              <p className="text-text font-semibold">Fallback Handler</p>
-              <p className="text-[11px] text-text-muted">Extracts msg.sig (`msg.data[:4]`) and queries FunctionRegistry.</p>
-            </div>
-
-            <div className="p-3.5 bg-card border border-border rounded-lg space-y-1">
-              <span className="text-[10px] text-accent font-bold uppercase tracking-wider">Step 3: Delegatecall</span>
-              <p className="text-text font-semibold">Facet Execution</p>
-              <p className="text-[11px] text-text-muted">Executes logic in target contract (MockToken / MockCalc) with caller state.</p>
-            </div>
-
-            <div className="p-3.5 bg-card border border-border rounded-lg space-y-1">
-              <span className="text-[10px] text-accent font-bold uppercase tracking-wider">Step 4: Bubble Up</span>
-              <p className="text-text font-semibold">Assembly Return</p>
-              <p className="text-[11px] text-text-muted">Copies returndata / revert bytes and returns directly to caller.</p>
-            </div>
-          </div>
+          ))}
         </div>
       )}
-    </div>
+    </section>
   );
 }

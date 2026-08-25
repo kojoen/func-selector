@@ -7,67 +7,61 @@
 }
 
 body {
-  color: #F8FAFC;
-  background-color: #090A0F;
-  background-image: 
-    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.05) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(6, 182, 212, 0.04) 0px, transparent 50%),
-    radial-gradient(at 50% 100%, rgba(139, 92, 246, 0.03) 0px, transparent 50%);
+  color: #EDEDEF;
+  background-color: #0C0C0E;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
 }
 
 ::selection {
-  background: rgba(99, 102, 241, 0.35);
+  background: rgba(129, 140, 248, 0.3);
   color: #FFFFFF;
 }
 
-/* Custom sleek minimalist Web3 scrollbar */
+/* Minimal scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
-
 ::-webkit-scrollbar-track {
   background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: #1C2030;
+  background: #232329;
   border-radius: 9999px;
-  transition: background 0.2s ease;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: #2E3650;
+  background: #2E2E38;
 }
-
-/* Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #1C2030 transparent;
+  scrollbar-color: #232329 transparent;
 }
 
-/* Force dark bg on all form inputs */
-input,
-textarea,
-select,
-option {
-  background-color: #0B0C12;
-  color: #F8FAFC;
+/* Inputs */
+input, textarea, select, option {
+  background-color: #111114;
+  color: #EDEDEF;
 }
-
-input::placeholder,
-textarea::placeholder {
-  color: #475569;
+input::placeholder, textarea::placeholder {
+  color: #55555F;
 }
-
-/* Fix browser autofill white flash */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 textarea:-webkit-autofill {
-  -webkit-box-shadow: 0 0 0 30px #0B0C12 inset !important;
-  -webkit-text-fill-color: #F8FAFC !important;
-  caret-color: #F8FAFC;
+  -webkit-box-shadow: 0 0 0 30px #111114 inset !important;
+  -webkit-text-fill-color: #EDEDEF !important;
+  caret-color: #EDEDEF;
+}
+
+/* Focus ring utility */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-accent/40 focus:ring-offset-1 focus:ring-offset-bg;
+}
+
+/* Smooth transitions */
+.interactive {
+  @apply transition-all duration-150 ease-out;
 }
