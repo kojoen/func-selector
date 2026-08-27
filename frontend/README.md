@@ -1,57 +1,70 @@
-# RouteX & Web3 SDK
+# RouteX Frontend
 
-A production-grade Web3 dashboard and interactive calldata playground for the **RouteX** smart contract architecture.
+A Web3 developer interface and calldata playground for the RouteX dynamic function dispatcher on Ethereum Sepolia.
 
 ---
 
-## ⚡ Tech Stack
+## Features
+
+- **Facet Studio**: Live on-chain interaction with registered facets (`MockToken` ERC-20 faucet/transfer and `MockCalc` pure arithmetic).
+- **Route Registry**: Read and manage selector-to-implementation routes mapped in `FunctionRegistry.sol`.
+- **Dispatcher Gateway**: Encode parameter inputs into raw calldata and dispatch transactions through `FunctionDispatcher.sol`.
+- **Calldata Inspector**: Disassemble raw transaction payloads into 4-byte selectors and 32-byte words, with `eth_call` pre-flight simulation.
+- **Security Auditor**: Detect 4-byte Keccak-256 selector collisions and verify facet address safety.
+- **SDK Codegen**: Generate copy-paste integration snippets in Viem, Ethers.js (v6), and Solidity.
+- **Selector Hasher**: Compute 4-byte function selectors from canonical Solidity signatures in real time.
+
+---
+
+## Deployed Contracts (Sepolia)
+
+| Contract | Address |
+|---|---|
+| **FunctionDispatcher** | `0x4bf0170e56452a3f02afeb84554b0ae5d26c6349` |
+| **FunctionRegistry** | `0x54254040faf67f85e96617d3ec600248c4b3ad37` |
+| **MockCalc** | `0x5dfd8159f5c72c582d9871fd62100b115d25290e` |
+| **MockToken** | `0xf2087c6561224ca85d9e98028cf7d075640f3b11` |
+
+---
+
+## Tech Stack
 
 - **Framework**: Next.js 14 (App Router) + TypeScript
-- **Web3 Engine**: Viem v2 + Wagmi v2
-- **Wallet Connection**: RainbowKit
-- **UI / Styling**: Tailwind CSS + Lucide Icons + Sonner (Toast notifications)
-- **Data Synchronization**: TanStack Query (React Query)
+- **Ethereum Libraries**: Viem v2 + Wagmi v2 + RainbowKit
+- **Styling**: Tailwind CSS + Lucide Icons + Sonner
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
-### 1. Install Dependencies
+### 1. Install dependencies
+
 ```bash
-cd frontend
 npm install
 ```
 
-### 2. Environment Variables
-Copy the example environment file:
-```bash
-cp .env.example .env.local
-```
-Configure your contract addresses:
-- `NEXT_PUBLIC_REGISTRY_ADDRESS`: Address of deployed `FunctionRegistry.sol`
-- `NEXT_PUBLIC_DISPATCHER_ADDRESS`: Address of deployed `FunctionDispatcher.sol`
-- `NEXT_PUBLIC_MOCK_CALC_ADDRESS`: Address of deployed `MockCalc.sol`
-- `NEXT_PUBLIC_MOCK_TOKEN_ADDRESS`: Address of deployed `MockToken.sol`
+### 2. Configure environment variables (optional)
 
-### 3. Run Development Server
+Create a `.env.local` file if you want to override default contract addresses or RPCs:
+
+```env
+NEXT_PUBLIC_REGISTRY_ADDRESS="0x54254040faf67f85e96617d3ec600248c4b3ad37"
+NEXT_PUBLIC_DISPATCHER_ADDRESS="0x4bf0170e56452a3f02afeb84554b0ae5d26c6349"
+NEXT_PUBLIC_MOCK_CALC_ADDRESS="0x5dfd8159f5c72c582d9871fd62100b115d25290e"
+NEXT_PUBLIC_MOCK_TOKEN_ADDRESS="0xf2087c6561224ca85d9e98028cf7d075640f3b11"
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=""
+```
+
+### 3. Run development server
+
 ```bash
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) with your browser.
 
----
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## 🏛️ Core Features
+### 4. Production build
 
-1. **Live Routing Table (`RoutingTable.tsx`)**:
-   - Queries all active selectors via `getAllSelectors()` and multicall.
-   - Search by function signature, 4-byte selector hex, or target implementation address.
-   - Owner actions: Register new route, Hot-swap implementation, or Unregister route.
-
-2. **Dispatcher Playground (`DispatcherPlayground.tsx`)**:
-   - Preset ABI parameter inputs for `MockCalc` and `MockToken`.
-   - Real-time calldata assembly inspector.
-   - Low-level `eth_call` simulation and fallback transaction dispatching.
-
-3. **Selector Studio (`SelectorHasher.tsx`)**:
-   - Live Keccak-256 function selector derivation and byte inspection.
+```bash
+npm run build
+```
