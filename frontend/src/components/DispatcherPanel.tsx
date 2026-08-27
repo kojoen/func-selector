@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { PRESET_FUNCTIONS, CONTRACT_ADDRESSES } from "../config/contracts";
 import { FunctionSelectorSDK } from "../lib/sdk";
-import { useDispatcher } from "../hooks/useDispatcher";
+import { useDispatcher, sepoliaPublicClient } from "../hooks/useDispatcher";
 import { toast } from "sonner";
 import { type Hex } from "viem";
-import { Send, Play, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Send, Play, AlertCircle, CheckCircle2, ExternalLink, Sparkles } from "lucide-react";
 
 export function DispatcherPanel() {
   const [presetIdx, setPresetIdx] = useState(0);
@@ -14,9 +14,10 @@ export function DispatcherPanel() {
   const [rawMode, setRawMode] = useState(false);
   const [rawCalldata, setRawCalldata] = useState("");
   const [ethValue, setEthValue] = useState("");
+  const [livePreview, setLivePreview] = useState<string | null>(null);
 
   const preset = PRESET_FUNCTIONS[presetIdx];
-  const { simulateCalldata, executeCalldata, isExecuting, result, error } = useDispatcher();
+  const { simulateCalldata, executeCalldata, isExecuting, resultData, error } = useDispatcher();
 
   const calldata: Hex = useMemo(() => {
     if (rawMode) {
@@ -35,6 +36,32 @@ export function DispatcherPanel() {
       return (preset.selector as Hex) || "0x";
     }
   }, [rawMode, rawCalldata, presetIdx, params, preset]);
+
+  // Live non-blocking preview for pure/view calls
+  useEffect(() => {
+    let active = true;
+    if (calldata.length >= 10 && (preset?.category === "MockCalc" || preset?.name.startsWith("balance") || preset?.name === "totalSupply")) {
+      sepoliaPublicClient
+        .call({ to: CONTRACT_ADDRESSES.dispatcher, data: calldata })
+        .then((res) => {
+          if (active && res.data && res.data !== "0x") {
+            try {
+              setLivePreview(BigInt(res.data).toString());
+            } catch {
+              setLivePreview(res.data);
+            }
+          }
+        })
+        .catch(() => {
+          if (active) setLivePreview(null);
+        });
+    } else {
+      setLivePreview(null);
+    }
+    return () => {
+      active = false;
+    };
+  }, [calldata, preset]);
 
   const handleSimulate = async () => {
     try {
@@ -163,9 +190,16 @@ export function DispatcherPanel() {
       {/* Right: Inspector & Output */}
       <div className="bg-surface border border-border rounded-2xl p-5 space-y-4 flex flex-col justify-between">
         <div className="space-y-4">
-          <span className="text-[11px] font-medium text-text-secondary uppercase tracking-wider">
-            Memory Layout & Output
-          </span>
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-medium text-text-secondary uppercase tracking-wider">
+              Memory Layout & Output
+            </span>
+            {livePreview !== null && (
+              <span className="text-[10px] font-mono text-accent bg-accent-soft px-2 py-0.5 rounded border border-accent/20 flex items-center gap-1">
+                <Sparkles className="w-3 h-3" /> Live Return: {livePreview}
+              </span>
+            )}
+          </div>
 
           <div className="space-y-3">
             <div>
@@ -194,14 +228,40 @@ export function DispatcherPanel() {
           </div>
         </div>
 
+        {/* Execution Output Card */}
         <div className="pt-3 border-t border-border">
-          {result ? (
-            <div className="bg-ok-muted border border-ok/20 rounded-lg p-3 text-xs text-ok font-mono break-all flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
-              <div>
-                <p className="font-semibold mb-0.5">Execution Output:</p>
-                <p>{result}</p>
+          {resultData ? (
+            <div className="bg-ok-muted border border-ok/20 rounded-xl p-4 text-xs font-mono text-text space-y-2.5">
+              <div className="flex items-center gap-2 text-ok font-semibold">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>Execution Succeeded</span>
               </div>
+
+              {/* Prominent Decoded Output */}
+              {resultData.output !== undefined && (
+                <div className="bg-bg-raised border border-ok/30 rounded-lg p-3 space-y-1">
+                  <p className="text-[10px] text-text-muted uppercase tracking-wider">Computed Return Output:</p>
+                  <p className="text-xl font-bold font-mono text-ok">{resultData.output}</p>
+                </div>
+              )}
+
+              {/* Transaction Receipt Link if sent on-chain */}
+              {resultData.txHash && (
+                <div className="bg-bg-raised border border-border rounded-lg p-2.5 flex items-center justify-between text-[11px]">
+                  <span className="text-text-secondary">
+                    {resultData.blockNumber ? `Block #${resultData.blockNumber}` : "Pending on-chain"}
+                  </span>
+                  <a
+                    href={`https://sepolia.etherscan.io/tx/${resultData.txHash}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-1 text-accent hover:underline"
+                  >
+                    <span>{resultData.txHash.slice(0, 10)}...{resultData.txHash.slice(-6)}</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+              )}
             </div>
           ) : error ? (
             <div className="bg-err-muted border border-err/20 rounded-lg p-3 text-xs text-err font-mono break-all flex items-start gap-2">

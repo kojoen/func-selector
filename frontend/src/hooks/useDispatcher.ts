@@ -16,9 +16,17 @@ export const sepoliaPublicClient = createPublicClient({
   ]),
 });
 
+export interface DispatcherResultData {
+  output?: string;
+  rawHex?: string;
+  txHash?: string;
+  blockNumber?: string;
+  message: string;
+}
+
 export function useDispatcher() {
   const [isExecuting, setIsExecuting] = useState(false);
-  const [result, setResult] = useState<string | null>(null);
+  const [resultData, setResultData] = useState<DispatcherResultData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const { address, isConnected, chainId } = useAccount();
@@ -29,7 +37,7 @@ export function useDispatcher() {
   const simulateCalldata = async (calldata: Hex, value = 0n, customCaller?: Address) => {
     setIsExecuting(true);
     setError(null);
-    setResult(null);
+    setResultData(null);
 
     try {
       const caller = customCaller || address || undefined;
@@ -40,18 +48,23 @@ export function useDispatcher() {
         value,
       });
 
+      let decodedOutput: string | undefined = undefined;
       if (simulation.data && simulation.data !== "0x") {
-        let decodedText = `Raw Hex: ${simulation.data}`;
         try {
           const num = BigInt(simulation.data);
-          decodedText = `Output (uint256): ${num.toString()} · Raw: ${simulation.data.slice(0, 18)}...`;
-        } catch {}
-        setResult(decodedText);
-        return simulation.data;
-      } else {
-        setResult("Execution succeeded (Empty / void return)");
-        return "0x";
+          decodedOutput = num.toString();
+        } catch {
+          decodedOutput = simulation.data;
+        }
       }
+
+      const resObj: DispatcherResultData = {
+        output: decodedOutput,
+        rawHex: simulation.data || "0x",
+        message: decodedOutput ? `Evaluated Output: ${decodedOutput}` : "Execution succeeded (void return)",
+      };
+      setResultData(resObj);
+      return simulation.data;
     } catch (err: any) {
       const errMsg = FunctionSelectorSDK.decodeCustomError(err);
       setError(errMsg);
@@ -64,7 +77,7 @@ export function useDispatcher() {
   const executeCalldata = async (calldata: Hex, value = 0n) => {
     setIsExecuting(true);
     setError(null);
-    setResult(null);
+    setResultData(null);
 
     try {
       if (!address) {
@@ -76,7 +89,9 @@ export function useDispatcher() {
         await switchChainAsync({ chainId: sepolia.id });
       }
 
-      // 2. Pre-flight simulation
+      // 2. Pre-flight simulation to capture calculated output
+      let calculatedOutput: string | undefined = undefined;
+      let rawHexData = "0x";
       try {
         const simulation = await publicClient.call({
           account: address,
@@ -85,11 +100,11 @@ export function useDispatcher() {
           value,
         });
         if (simulation.data && simulation.data !== "0x") {
+          rawHexData = simulation.data;
           try {
-            const num = BigInt(simulation.data);
-            setResult(`Simulated: ${num.toString()}`);
+            calculatedOutput = BigInt(simulation.data).toString();
           } catch {
-            setResult(`Simulated: ${simulation.data}`);
+            calculatedOutput = simulation.data;
           }
         }
       } catch (simErr: any) {
@@ -106,7 +121,13 @@ export function useDispatcher() {
       });
 
       // 4. Wait for transaction to be mined
-      setResult(`Broadcasting tx ${txHash.slice(0, 10)}... (waiting for confirmation)`);
+      setResultData({
+        output: calculatedOutput,
+        rawHex: rawHexData,
+        txHash,
+        message: `Broadcasting tx ${txHash.slice(0, 10)}... (waiting for block confirmation)`,
+      });
+
       const receipt = await publicClient.waitForTransactionReceipt({
         hash: txHash,
         confirmations: 1,
@@ -116,7 +137,14 @@ export function useDispatcher() {
         throw new Error("Transaction was mined but execution reverted on-chain.");
       }
 
-      setResult(`Confirmed on block #${receipt.blockNumber} (tx: ${txHash.slice(0, 10)}...${txHash.slice(-6)})`);
+      const finalRes: DispatcherResultData = {
+        output: calculatedOutput,
+        rawHex: rawHexData,
+        txHash,
+        blockNumber: receipt.blockNumber.toString(),
+        message: `Confirmed on block #${receipt.blockNumber}`,
+      };
+      setResultData(finalRes);
       return txHash;
     } catch (err: any) {
       const errMsg = FunctionSelectorSDK.decodeCustomError(err);
@@ -131,7 +159,8 @@ export function useDispatcher() {
     simulateCalldata,
     executeCalldata,
     isExecuting,
-    result,
+    resultData,
+    result: resultData?.message || null,
     error,
     publicClient,
   };
