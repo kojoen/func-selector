@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useSendTransaction, usePublicClient, useAccount, useSwitchChain } from "wagmi";
 import { sepolia } from "wagmi/chains";
-import { createPublicClient, http, fallback, type Hex } from "viem";
+import { createPublicClient, http, fallback, type Hex, type Address } from "viem";
 import { CONTRACT_ADDRESSES } from "../config/contracts";
 import { FunctionSelectorSDK } from "../lib/sdk";
 import { SEPOLIA_RPCS } from "../config/wagmi";
@@ -26,6 +26,41 @@ export function useDispatcher() {
   const publicClient = usePublicClient({ chainId: sepolia.id }) || sepoliaPublicClient;
   const { sendTransactionAsync } = useSendTransaction();
 
+  const simulateCalldata = async (calldata: Hex, value = 0n, customCaller?: Address) => {
+    setIsExecuting(true);
+    setError(null);
+    setResult(null);
+
+    try {
+      const caller = customCaller || address || undefined;
+      const simulation = await sepoliaPublicClient.call({
+        account: caller,
+        to: CONTRACT_ADDRESSES.dispatcher,
+        data: calldata,
+        value,
+      });
+
+      if (simulation.data && simulation.data !== "0x") {
+        let decodedText = `Raw Hex: ${simulation.data}`;
+        try {
+          const num = BigInt(simulation.data);
+          decodedText = `Output (uint256): ${num.toString()} · Raw: ${simulation.data.slice(0, 18)}...`;
+        } catch {}
+        setResult(decodedText);
+        return simulation.data;
+      } else {
+        setResult("Execution succeeded (Empty / void return)");
+        return "0x";
+      }
+    } catch (err: any) {
+      const errMsg = FunctionSelectorSDK.decodeCustomError(err);
+      setError(errMsg);
+      throw new Error(errMsg);
+    } finally {
+      setIsExecuting(false);
+    }
+  };
+
   const executeCalldata = async (calldata: Hex, value = 0n) => {
     setIsExecuting(true);
     setError(null);
@@ -41,7 +76,7 @@ export function useDispatcher() {
         await switchChainAsync({ chainId: sepolia.id });
       }
 
-      // 2. Simulate on-chain via eth_call with connected account context
+      // 2. Pre-flight simulation
       try {
         const simulation = await publicClient.call({
           account: address,
@@ -50,7 +85,12 @@ export function useDispatcher() {
           value,
         });
         if (simulation.data && simulation.data !== "0x") {
-          setResult(`Simulation Output: ${simulation.data}`);
+          try {
+            const num = BigInt(simulation.data);
+            setResult(`Simulated: ${num.toString()}`);
+          } catch {
+            setResult(`Simulated: ${simulation.data}`);
+          }
         }
       } catch (simErr: any) {
         const decoded = FunctionSelectorSDK.decodeCustomError(simErr);
@@ -76,7 +116,7 @@ export function useDispatcher() {
         throw new Error("Transaction was mined but execution reverted on-chain.");
       }
 
-      setResult(`Confirmed on block #${receipt.blockNumber} (tx: ${txHash})`);
+      setResult(`Confirmed on block #${receipt.blockNumber} (tx: ${txHash.slice(0, 10)}...${txHash.slice(-6)})`);
       return txHash;
     } catch (err: any) {
       const errMsg = FunctionSelectorSDK.decodeCustomError(err);
@@ -88,6 +128,7 @@ export function useDispatcher() {
   };
 
   return {
+    simulateCalldata,
     executeCalldata,
     isExecuting,
     result,

@@ -6,7 +6,7 @@ import { FunctionSelectorSDK } from "../lib/sdk";
 import { useDispatcher } from "../hooks/useDispatcher";
 import { toast } from "sonner";
 import { type Hex } from "viem";
-import { Send, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Send, Play, AlertCircle, CheckCircle2 } from "lucide-react";
 
 export function DispatcherPanel() {
   const [presetIdx, setPresetIdx] = useState(0);
@@ -16,7 +16,7 @@ export function DispatcherPanel() {
   const [ethValue, setEthValue] = useState("");
 
   const preset = PRESET_FUNCTIONS[presetIdx];
-  const { executeCalldata, isExecuting, result, error } = useDispatcher();
+  const { simulateCalldata, executeCalldata, isExecuting, result, error } = useDispatcher();
 
   const calldata: Hex = useMemo(() => {
     if (rawMode) {
@@ -36,14 +36,25 @@ export function DispatcherPanel() {
     }
   }, [rawMode, rawCalldata, presetIdx, params, preset]);
 
+  const handleSimulate = async () => {
+    try {
+      toast.loading("Simulating via eth_call on Dispatcher...", { id: "dispatch-sim" });
+      const val = ethValue && Number(ethValue) > 0 ? BigInt(Math.floor(Number(ethValue) * 1e18)) : 0n;
+      await simulateCalldata(calldata, val);
+      toast.success("Simulation completed!", { id: "dispatch-sim" });
+    } catch (err: any) {
+      toast.error(err.message || "Simulation failed", { id: "dispatch-sim" });
+    }
+  };
+
   const handleExecute = async () => {
     try {
-      toast.loading("Dispatching...", { id: "dispatch" });
+      toast.loading("Dispatching on-chain transaction...", { id: "dispatch" });
       const val = ethValue && Number(ethValue) > 0 ? BigInt(Math.floor(Number(ethValue) * 1e18)) : 0n;
       await executeCalldata(calldata, val);
-      toast.success("Transaction confirmed", { id: "dispatch" });
+      toast.success("Transaction confirmed on-chain!", { id: "dispatch" });
     } catch (err: any) {
-      toast.error(err.message || "Reverted", { id: "dispatch" });
+      toast.error(err.message || "Execution reverted", { id: "dispatch" });
     }
   };
 
@@ -77,7 +88,7 @@ export function DispatcherPanel() {
               >
                 {PRESET_FUNCTIONS.map((fn, i) => (
                   <option key={fn.signature} value={i}>
-                    {fn.category} · {fn.signature}
+                    {fn.category} · {fn.signature} ({fn.selector})
                   </option>
                 ))}
               </select>
@@ -129,26 +140,36 @@ export function DispatcherPanel() {
           />
         </div>
 
-        <button
-          onClick={handleExecute}
-          disabled={isExecuting}
-          className="w-full flex items-center justify-center gap-2 text-xs font-medium text-text-inverse bg-accent hover:bg-accent-hover py-2.5 rounded-lg interactive disabled:opacity-30 shadow-glow-sm"
-        >
-          <Send className="w-3.5 h-3.5" />
-          {isExecuting ? "Executing..." : "Send Transaction"}
-        </button>
+        <div className="flex gap-2.5 pt-1">
+          <button
+            onClick={handleSimulate}
+            disabled={isExecuting}
+            className="flex-1 flex items-center justify-center gap-1.5 text-xs font-medium text-text-secondary hover:text-text bg-bg-raised border border-border hover:border-border-hover py-2.5 rounded-lg interactive disabled:opacity-30"
+          >
+            <Play className="w-3.5 h-3.5 text-accent" />
+            <span>{isExecuting ? "Simulating..." : "Simulate (eth_call)"}</span>
+          </button>
+          <button
+            onClick={handleExecute}
+            disabled={isExecuting}
+            className="flex-1 flex items-center justify-center gap-1.5 text-xs font-medium text-text-inverse bg-accent hover:bg-accent-hover py-2.5 rounded-lg interactive disabled:opacity-30 shadow-glow-sm"
+          >
+            <Send className="w-3.5 h-3.5" />
+            <span>{isExecuting ? "Sending..." : "Send Transaction"}</span>
+          </button>
+        </div>
       </div>
 
-      {/* Right: Inspector */}
+      {/* Right: Inspector & Output */}
       <div className="bg-surface border border-border rounded-2xl p-5 space-y-4 flex flex-col justify-between">
         <div className="space-y-4">
           <span className="text-[11px] font-medium text-text-secondary uppercase tracking-wider">
-            Memory Layout
+            Memory Layout & Output
           </span>
 
           <div className="space-y-3">
             <div>
-              <p className="text-[10px] text-text-muted mb-1">Target</p>
+              <p className="text-[10px] text-text-muted mb-1">Target Entrypoint</p>
               <p className="font-mono text-xs text-text-secondary bg-bg-raised border border-border rounded-lg px-3.5 py-2 break-all">
                 {CONTRACT_ADDRESSES.dispatcher}
               </p>
@@ -177,15 +198,23 @@ export function DispatcherPanel() {
           {result ? (
             <div className="bg-ok-muted border border-ok/20 rounded-lg p-3 text-xs text-ok font-mono break-all flex items-start gap-2">
               <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>{result}</span>
+              <div>
+                <p className="font-semibold mb-0.5">Execution Output:</p>
+                <p>{result}</p>
+              </div>
             </div>
           ) : error ? (
             <div className="bg-err-muted border border-err/20 rounded-lg p-3 text-xs text-err font-mono break-all flex items-start gap-2">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>{error}</span>
+              <div>
+                <p className="font-semibold mb-0.5">Execution Reverted:</p>
+                <p>{error}</p>
+              </div>
             </div>
           ) : (
-            <p className="text-xs text-text-muted text-center py-1">Ready to dispatch</p>
+            <p className="text-xs text-text-muted text-center py-2">
+              Ready. Click <strong>Simulate (eth_call)</strong> to read result or <strong>Send Transaction</strong> to write on-chain.
+            </p>
           )}
         </div>
       </div>
