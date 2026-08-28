@@ -5,7 +5,7 @@ import { Layers, Zap, Shield, ChevronDown, ChevronUp, ArrowRight } from "lucide-
 
 const STEPS = [
   { step: "01", title: "Inbound Call", desc: "Raw calldata sent to single Dispatcher address" },
-  { step: "02", title: "Selector Slice", desc: "msg.sig extracted — first 4 bytes of calldata" },
+  { step: "02", title: "Selector Slice", desc: "msg.sig extracted (first 4 bytes of calldata)" },
   { step: "03", title: "Registry Lookup", desc: "Selector mapped to facet implementation address" },
   { step: "04", title: "Delegatecall", desc: "Facet executes in Dispatcher's storage context" },
 ];
@@ -36,7 +36,7 @@ export function ArchitectureHero() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
           { icon: Zap, title: "Single Entrypoint", desc: "One immutable address for all function calls" },
-          { icon: Layers, title: "O(1) Registry", desc: "Swap-and-pop enumerable selector mapping" },
+          { icon: Layers, title: "O(1) Registry", desc: "Swap and pop enumerable selector mapping" },
           { icon: Shield, title: "Shared Storage", desc: "Facets execute under Dispatcher state context" },
         ].map(({ icon: Icon, title, desc }) => (
           <div
